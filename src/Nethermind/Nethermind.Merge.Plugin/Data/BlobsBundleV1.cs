@@ -28,10 +28,13 @@ public class BlobsBundleV1
 
         foreach (Transaction? tx in block.Transactions)
         {
-            if (tx is not { NetworkWrapper: ShardBlobNetworkWrapper wrapper })
+            if (!tx.SupportsBlobs)
             {
                 continue;
             }
+
+            ShardBlobNetworkWrapper wrapper = tx.NetworkWrapper as ShardBlobNetworkWrapper ??
+                                              throw new ArgumentException("NetworkWrapper");
 
             for (int cc = 0, bc = 0, pc = 0;
                  cc < wrapper.Commitments.Length;

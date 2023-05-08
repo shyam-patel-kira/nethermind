@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
@@ -108,6 +109,7 @@ namespace Nethermind.TxPool
             List<IIncomingTxFilter> postHashFilters = new()
             {
                 new NullHashTxFilter(), // needs to be first as it assigns the hash
+                new NetworkFormTxFilter(_logger),
                 new AlreadyKnownTxFilter(_hashCache, _logger),
                 new UnknownSenderFilter(ecdsa, _logger),
                 new BalanceZeroFilter(thereIsPriorityContract, _logger),
@@ -672,6 +674,27 @@ Ratios:
 * DarkPool Level2:      {Metrics.DarkPoolRatioLevel2,24:P5}
 ------------------------------------------------
 ");
+        }
+    }
+
+    public class NetworkFormTxFilter : IIncomingTxFilter
+    {
+        private readonly ILogger _logger;
+
+        public NetworkFormTxFilter(ILogger logger)
+        {
+            _logger = logger;
+        }
+
+        public AcceptTxResult Accept(Transaction tx, TxFilteringState state, TxHandlingOptions txHandlingOptions)
+        {
+            if (tx is { SupportsBlobs: true, NetworkWrapper: null })
+            {
+                _logger.Error($"Non-mempool form tx submitted {new StackTrace()} {txHandlingOptions} {tx.Hash}");
+                return AcceptTxResult.Invalid;
+            }
+
+            return AcceptTxResult.Accepted;
         }
     }
 }

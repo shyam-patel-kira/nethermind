@@ -57,6 +57,7 @@ namespace Nethermind.Runner
 
         public static void Main(string[] args)
         {
+            args = args.Concat(new []{"--log", "TRACE"}).ToArray();
 #if !DEBUG
             ResourceLeakDetector.Level = ResourceLeakDetector.DetectionLevel.Disabled;
 #endif

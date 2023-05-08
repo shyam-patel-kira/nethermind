@@ -40,7 +40,6 @@ public class TransactionForRpc
         Type = transaction.Type;
         AccessList = transaction.AccessList is null ? null : AccessListItemForRpc.FromAccessList(transaction.AccessList);
         MaxFeePerDataGas = transaction.MaxFeePerDataGas;
-        BlobVersionedHashes = transaction.BlobVersionedHashes;
 
         Signature? signature = transaction.Signature;
         if (signature is not null)
@@ -95,9 +94,6 @@ public class TransactionForRpc
 
     public UInt256? MaxFeePerDataGas { get; set; } // eip4844
 
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public byte[][]? BlobVersionedHashes { get; set; } // eip4844
-
     public UInt256? V { get; set; }
 
     public UInt256? S { get; set; }
@@ -134,8 +130,7 @@ public class TransactionForRpc
 
         if (tx.SupportsBlobs)
         {
-            tx.MaxFeePerDataGas = MaxFeePerDataGas;
-            tx.BlobVersionedHashes = BlobVersionedHashes;
+            throw new Exception($"{tx.Type} is not supported for RPC");
         }
 
         return tx;
@@ -167,8 +162,7 @@ public class TransactionForRpc
 
         if (tx.SupportsBlobs)
         {
-            tx.MaxFeePerDataGas = MaxFeePerDataGas;
-            tx.BlobVersionedHashes = BlobVersionedHashes;
+            throw new Exception($"{tx.Type} is not supported by RPC");
         }
 
         return tx;
