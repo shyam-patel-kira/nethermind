@@ -160,7 +160,7 @@ public class TelegramPlugin : INethermindPlugin
         else if(_trackedAddresses.TryGetValue(to, out long chatId2))
         {
             _bot!.SendTextMessageAsync(
-                chatId: chatId1,
+                chatId: chatId2,
                 text: $"Received from: {from} value {value}");
         }
     }
