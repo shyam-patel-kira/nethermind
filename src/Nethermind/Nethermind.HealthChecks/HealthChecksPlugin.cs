@@ -142,6 +142,8 @@ namespace Nethermind.HealthChecks
                 _api.BlockchainProcessor!, _api.BlockProducer!, _healthChecksConfig, _api.HealthHintService!,
                 _api.EthSyncingInfo!, _api.RpcCapabilitiesProvider, _api, drives, _initConfig.IsMining);
 
+            _api.NodeHealthService = _nodeHealthService;
+
             if (_healthChecksConfig.Enabled)
             {
                 HealthRpcModule healthRpcModule = new(_nodeHealthService);

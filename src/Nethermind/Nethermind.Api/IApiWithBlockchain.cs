@@ -71,6 +71,7 @@ namespace Nethermind.Api
         IWitnessCollector? WitnessCollector { get; set; }
         IWitnessRepository? WitnessRepository { get; set; }
         IHealthHintService? HealthHintService { get; set; }
+        INodeHealthService? NodeHealthService { get; set; }
         IRpcCapabilitiesProvider? RpcCapabilitiesProvider { get; set; }
         ITransactionComparerProvider? TransactionComparerProvider { get; set; }
         TxValidator? TxValidator { get; set; }

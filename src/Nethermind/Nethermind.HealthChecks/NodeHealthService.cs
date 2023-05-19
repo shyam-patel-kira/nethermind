@@ -17,14 +17,6 @@ using Nethermind.Synchronization.ParallelSync;
 
 namespace Nethermind.HealthChecks
 {
-    public class CheckHealthResult
-    {
-        public bool Healthy { get; set; }
-        public IEnumerable<(string Message, string LongMessage)> Messages { get; set; }
-        public bool IsSyncing { get; set; }
-        public IEnumerable<string> Errors { get; set; }
-    }
-
     public class NodeHealthService : INodeHealthService
     {
         private readonly ISyncServer _syncServer;

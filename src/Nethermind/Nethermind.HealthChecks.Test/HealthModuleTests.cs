@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Nethermind.Api;
 using Nethermind.JsonRpc;
 using NSubstitute;
 using NUnit.Framework;
