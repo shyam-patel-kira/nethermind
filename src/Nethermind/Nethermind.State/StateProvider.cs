@@ -201,7 +201,7 @@ namespace Nethermind.State
 
             if (isSubtracting && account.Balance < balanceChange)
             {
-                throw new InsufficientBalanceException(address);
+                throw new InsufficientBalanceException(address, balanceChange, account.Balance);
             }
 
             UInt256 newBalance = isSubtracting ? account.Balance - balanceChange : account.Balance + balanceChange;
