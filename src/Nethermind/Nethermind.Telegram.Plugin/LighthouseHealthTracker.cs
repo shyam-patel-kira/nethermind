@@ -20,7 +20,7 @@ public class LighthouseHealthTracker
     {
         HttpClient client = new();
         client.DefaultRequestHeaders.Add("accept", "application/json");
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer: {_authKey}");
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_authKey}");
         HttpContent content = (await client.GetAsync("http://localhost:5062/lighthouse/validators")).Content;
         return await content.ReadAsStringAsync();
     }
