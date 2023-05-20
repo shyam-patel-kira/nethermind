@@ -16,6 +16,7 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Nethermind.Telegram.Plugin;
 
@@ -89,7 +90,7 @@ public class TelegramPlugin : INethermindPlugin
         _api!.BlockchainProcessor!.Tracers.Add(tracker);
     }
 
-    private async Task<bool> HandleWaitingForMessage(ITelegramBotClient botClient, long chatId, string text,
+    private async Task<bool> HandleWaitingForMessage(ITelegramBotClient bot, long chatId, string text,
         CancellationToken cancellationToken)
     {
         if (_waiting.TryGetValue(chatId, out WaitFor waitingFor))
@@ -98,12 +99,11 @@ public class TelegramPlugin : INethermindPlugin
             {
                 if (waitingFor == WaitFor.Track)
                 {
-
                     Address address = new(text);
                     _chats[chatId] = address;
                     _trackedAddresses.GetOrAdd(address, v => new ConcurrentHashSet<long>()).Add(chatId);
 
-                    await botClient.SendTextMessageAsync(
+                    await bot.SendTextMessageAsync(
                         chatId: chatId,
                         text: $"Tracking address {address}",
                         cancellationToken: cancellationToken);
@@ -112,37 +112,34 @@ public class TelegramPlugin : INethermindPlugin
                 else if (waitingFor == WaitFor.GetAccount)
                 {
                     Address address = new(text);
-
-                    await botClient.SendTextMessageAsync(
-                        chatId: chatId,
-                        text: $"Tracking address {address}",
-                        cancellationToken: cancellationToken);
-
                     Keccak stateRoot = _api!.BlockTree!.BestSuggestedHeader!.StateRoot!;
-
                     Account? account = _api.StateReader!.GetAccount(stateRoot, address);
 
                     if (account is null)
                     {
-                        await botClient.SendTextMessageAsync(
+                        await bot.SendTextMessageAsync(
                             chatId: chatId,
                             text: $"Unknown account: {address}",
                             cancellationToken: cancellationToken);
                     }
                     else
                     {
-                        await botClient.SendTextMessageAsync(
+                        await bot.SendTextMessageAsync(
                             chatId: chatId,
                             text: $"Balance: {account.Balance} Nonce: {account.Nonce}",
                             cancellationToken: cancellationToken);
                     }
                 }
 
+                await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
+
                 _waiting.TryRemove(chatId, out var _);
+
+
             }
             catch (Exception)
             {
-                await botClient.SendTextMessageAsync(
+                await bot.SendTextMessageAsync(
                     chatId: chatId,
                     text: $"Can't parse address {text}",
                     cancellationToken: cancellationToken);
@@ -153,7 +150,7 @@ public class TelegramPlugin : INethermindPlugin
         return false;
     }
 
-    async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken cancellationToken)
     {
         if (update.Message is null || update.Message.Text is null) return;
 
@@ -162,21 +159,21 @@ public class TelegramPlugin : INethermindPlugin
 
         long chatId = message.Chat.Id;
 
-        if (await HandleWaitingForMessage(botClient, chatId, text, cancellationToken))
+        if (await HandleWaitingForMessage(bot, chatId, text, cancellationToken))
         {
             return;
         }
 
         if (text == "/start")
         {
+            if (_logger!.IsInfo) _logger.Info($"Received start. ChatId: {chatId}");
             _chats[chatId] = null;
-            await botClient.SendTextMessageAsync(
-                chatId: chatId,
-                text: $"Tracking Nethermind node: {_metricsConfig!.NodeName}",
-                cancellationToken: cancellationToken);
+
+            await SendTextWithCommandButtons(bot, chatId, $"Tracking Nethermind node: {_metricsConfig!.NodeName}", cancellationToken);
         }
         else if (text == "/stop")
         {
+            if (_logger!.IsInfo) _logger.Info($"Received stop. ChatId: {chatId}");
             _chats.Remove(chatId, out Address? address);
             if (address is not null)
             {
@@ -184,10 +181,14 @@ public class TelegramPlugin : INethermindPlugin
                 {
                     chats.TryRemove(chatId);
                 }
+                await SendTextWithCommandButtons(bot, chatId, $"Stopped tracking address: {address}", cancellationToken);
             }
-        } else if (text == "/track")
+            await SendTextWithCommandButtons(bot, chatId, $"Not tracking any address", cancellationToken);
+        }
+        else if (text == "/track")
         {
-            await botClient.SendTextMessageAsync(
+            if (_logger!.IsInfo) _logger.Info($"Received track. ChatId: {chatId}");
+            await bot.SendTextMessageAsync(
                 chatId: chatId,
                 text: "Enter address to track",
                 cancellationToken: cancellationToken);
@@ -195,52 +196,18 @@ public class TelegramPlugin : INethermindPlugin
         }
         else if (text == "/health")
         {
-            if (_api!.NodeHealthService is not null)
-            {
-                CheckHealthResult health = _api!.NodeHealthService.CheckHealth();
-
-                await botClient.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: $"Node health. Healthy: {health.Healthy} IsSyncing: {health.IsSyncing}",
-                    cancellationToken: cancellationToken);
-
-                foreach ((string _, string longMessage) in health.Messages!)
-                {
-                    await botClient.SendTextMessageAsync(
-                        chatId: chatId,
-                        text: longMessage,
-                        cancellationToken: cancellationToken);
-                }
-            }
+            if (_logger!.IsInfo) _logger.Info($"Received health. ChatId: {chatId}");
+            await HandleHealth(bot, chatId, cancellationToken);
         }
         else if(text == "/status")
         {
-            if (_api!.NodeHealthService is not null)
-            {
-                await botClient.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: $"Head block: {_api.BlockTree!.BestSuggestedHeader!.ToString(BlockHeader.Format.Short)}",
-                    cancellationToken: cancellationToken);
-
-                var diskSpaceInfos = _api.NodeHealthService.GetDiskSpaceInfo();
-
-                await botClient.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: "Available disk space:",
-                    cancellationToken: cancellationToken);
-
-                foreach ((string dir, double space, double percentage) diskSpaceInfo in diskSpaceInfos)
-                {
-                    await botClient.SendTextMessageAsync(
-                        chatId: chatId,
-                        text: $"Disk {diskSpaceInfo.dir} available space: {diskSpaceInfo.space}({diskSpaceInfo.percentage:F2}%)",
-                        cancellationToken: cancellationToken);
-                }
-            }
+            if (_logger!.IsInfo) _logger.Info($"Received status. ChatId: {chatId}");
+            await HandleStatus(bot, chatId, cancellationToken);
         }
         else if (text == "/getAccount")
         {
-            await botClient.SendTextMessageAsync(
+            if (_logger!.IsInfo) _logger.Info($"Received getAccount. ChatId: {chatId}");
+            await bot.SendTextMessageAsync(
                 chatId: chatId,
                 text: $"Enter address",
                 cancellationToken: cancellationToken);
@@ -248,10 +215,86 @@ public class TelegramPlugin : INethermindPlugin
         }
         else
         {
-            await botClient.SendTextMessageAsync(
+            if (_logger!.IsInfo) _logger.Info($"Received unknown command. ChatId: {chatId}, command: {text}");
+            await SendTextWithCommandButtons(bot, chatId, $"Unknown command: {text}", cancellationToken);
+        }
+    }
+
+    private static readonly InlineKeyboardButton _healthButton =
+        InlineKeyboardButton.WithCallbackData("Node health", "/health");
+    private static readonly InlineKeyboardButton _stopTrackingButton =
+        InlineKeyboardButton.WithCallbackData("Stop tracking", "/stop");
+    private static readonly InlineKeyboardButton _trackButton =
+        InlineKeyboardButton.WithCallbackData("Track account", "/track");
+    private static readonly InlineKeyboardButton _statusButton =
+        InlineKeyboardButton.WithCallbackData("Node status", "/status");
+    private static readonly InlineKeyboardButton _getAccountButton =
+        InlineKeyboardButton.WithCallbackData("Get account data", "/getAccount");
+
+    private static readonly InlineKeyboardButton[] _buttons = new[]
+    {
+        _healthButton, _stopTrackingButton, _trackButton, _statusButton, _getAccountButton
+    };
+
+    private static readonly InlineKeyboardMarkup _inlineKeyboard = new(_buttons);
+
+    async Task SendTextWithCommandButtons(ITelegramBotClient bot, long chatId, string text, CancellationToken cancellationToken)
+    {
+        await bot.SendTextMessageAsync(
+            chatId: chatId,
+            text: text,
+            replyMarkup: _inlineKeyboard,
+            cancellationToken: cancellationToken);
+    }
+
+    async Task HandleStatus(ITelegramBotClient bot, long chatId, CancellationToken cancellationToken)
+    {
+        if (_api!.NodeHealthService is not null)
+        {
+            await bot.SendTextMessageAsync(
                 chatId: chatId,
-                text: $"Unknown command {text}",
+                text: $"Head block: {_api.BlockTree!.BestSuggestedHeader!.ToString(BlockHeader.Format.Short)}",
                 cancellationToken: cancellationToken);
+
+            var diskSpaceInfos = _api.NodeHealthService.GetDiskSpaceInfo();
+
+            await bot.SendTextMessageAsync(
+                chatId: chatId,
+                text: "Available disk space:",
+                cancellationToken: cancellationToken);
+
+            foreach ((string dir, double space, double percentage) diskSpaceInfo in diskSpaceInfos)
+            {
+                await bot.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: $"Disk \"{diskSpaceInfo.dir}\" available space: {diskSpaceInfo.space:F2}GB ({diskSpaceInfo.percentage:F2}%)",
+                    cancellationToken: cancellationToken);
+            }
+
+            await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
+        }
+    }
+
+    async Task HandleHealth(ITelegramBotClient bot, long chatId, CancellationToken cancellationToken)
+    {
+        if (_api!.NodeHealthService is not null)
+        {
+            CheckHealthResult health = _api!.NodeHealthService.CheckHealth();
+
+            await bot.SendTextMessageAsync(
+                chatId: chatId,
+                text: $"Node health. Healthy: {health.Healthy} IsSyncing: {health.IsSyncing}",
+                cancellationToken: cancellationToken);
+
+            foreach ((string _, string longMessage) in health.Messages!)
+            {
+                await bot.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: longMessage,
+                    cancellationToken: cancellationToken);
+            }
+
+            await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
         }
     }
 
@@ -277,16 +320,16 @@ public class TelegramPlugin : INethermindPlugin
         }
     }
 
-    Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    Task HandlePollingErrorAsync(ITelegramBotClient bot, Exception exception, CancellationToken cancellationToken)
     {
-        var ErrorMessage = exception switch
+        string errorMessage = exception switch
         {
             ApiRequestException apiRequestException
-                => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
+                => $"API Exception:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
             _ => exception.ToString()
         };
 
-        _logger!.Error(ErrorMessage);
+        _logger!.Error(errorMessage);
         return Task.CompletedTask;
     }
 
@@ -300,4 +343,3 @@ public class TelegramPlugin : INethermindPlugin
         return ValueTask.CompletedTask;
     }
 }
-
