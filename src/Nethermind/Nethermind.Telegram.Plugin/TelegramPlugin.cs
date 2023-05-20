@@ -134,8 +134,6 @@ public class TelegramPlugin : INethermindPlugin
                 await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
 
                 _waiting.TryRemove(chatId, out var _);
-
-
             }
             catch (Exception)
             {
@@ -152,12 +150,24 @@ public class TelegramPlugin : INethermindPlugin
 
     async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken cancellationToken)
     {
-        if (update.Message is null || update.Message.Text is null) return;
+        if (update.Message is null && (update.CallbackQuery is null || update.CallbackQuery.Message is null))
+        {
+            _logger!.Warn($"Unknown message type {update.Type}");
+            return;
+        };
 
-        Message message = update.Message;
+        Message message = update.Message ?? update.CallbackQuery!.Message!;
+
+        if (message.Text is null)
+        {
+            _logger!.Warn($"No test message {update.Type}");
+            return;
+        }
+
         string text = message.Text;
-
         long chatId = message.Chat.Id;
+
+        if (_logger!.IsWarn) _logger.Warn($"Received message. ChatId: {chatId} Text {text}");
 
         if (await HandleWaitingForMessage(bot, chatId, text, cancellationToken))
         {
@@ -166,14 +176,12 @@ public class TelegramPlugin : INethermindPlugin
 
         if (text == "/start")
         {
-            if (_logger!.IsInfo) _logger.Info($"Received start. ChatId: {chatId}");
             _chats[chatId] = null;
 
             await SendTextWithCommandButtons(bot, chatId, $"Tracking Nethermind node: {_metricsConfig!.NodeName}", cancellationToken);
         }
         else if (text == "/stop")
         {
-            if (_logger!.IsInfo) _logger.Info($"Received stop. ChatId: {chatId}");
             _chats.Remove(chatId, out Address? address);
             if (address is not null)
             {
@@ -187,7 +195,6 @@ public class TelegramPlugin : INethermindPlugin
         }
         else if (text == "/track")
         {
-            if (_logger!.IsInfo) _logger.Info($"Received track. ChatId: {chatId}");
             await bot.SendTextMessageAsync(
                 chatId: chatId,
                 text: "Enter address to track",
@@ -196,17 +203,14 @@ public class TelegramPlugin : INethermindPlugin
         }
         else if (text == "/health")
         {
-            if (_logger!.IsInfo) _logger.Info($"Received health. ChatId: {chatId}");
             await HandleHealth(bot, chatId, cancellationToken);
         }
         else if(text == "/status")
         {
-            if (_logger!.IsInfo) _logger.Info($"Received status. ChatId: {chatId}");
             await HandleStatus(bot, chatId, cancellationToken);
         }
         else if (text == "/getAccount")
         {
-            if (_logger!.IsInfo) _logger.Info($"Received getAccount. ChatId: {chatId}");
             await bot.SendTextMessageAsync(
                 chatId: chatId,
                 text: $"Enter address",
@@ -215,7 +219,6 @@ public class TelegramPlugin : INethermindPlugin
         }
         else
         {
-            if (_logger!.IsInfo) _logger.Info($"Received unknown command. ChatId: {chatId}, command: {text}");
             await SendTextWithCommandButtons(bot, chatId, $"Unknown command: {text}", cancellationToken);
         }
     }
