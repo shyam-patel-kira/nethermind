@@ -150,21 +150,14 @@ public class TelegramPlugin : INethermindPlugin
 
     async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken cancellationToken)
     {
-        if (update.Message is null && (update.CallbackQuery is null || update.CallbackQuery.Message is null))
+        if ((update.Message is null || update.Message.Text is null) && (update.CallbackQuery is null || update.CallbackQuery.Message is null))
         {
             _logger!.Warn($"Unknown message type {update.Type}");
             return;
         };
 
         Message message = update.Message ?? update.CallbackQuery!.Message!;
-
-        if (message.Text is null)
-        {
-            _logger!.Warn($"No test message {update.Type}");
-            return;
-        }
-
-        string text = message.Text;
+        string text = message.Text ?? update.CallbackQuery!.Data!;
         long chatId = message.Chat.Id;
 
         if (_logger!.IsWarn) _logger.Warn($"Received message. ChatId: {chatId} Text {text}");
