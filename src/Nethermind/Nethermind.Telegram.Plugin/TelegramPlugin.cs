@@ -150,15 +150,25 @@ public class TelegramPlugin : INethermindPlugin
 
     async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken cancellationToken)
     {
-        if ((update.Message is null || update.Message.Text is null) && (update.CallbackQuery is null || update.CallbackQuery.Message is null))
-        {
-            _logger!.Warn($"Unknown message type {update.Type}");
-            return;
-        };
+        string text;
+        long chatId;
 
-        Message message = update.Message ?? update.CallbackQuery!.Message!;
-        string text = message.Text ?? update.CallbackQuery!.Data!;
-        long chatId = message.Chat.Id;
+        switch (update.Type)
+        {
+            case UpdateType.Message:
+                Message message = update.Message!;
+                text = message.Text!;
+                chatId = message.Chat.Id;
+                break;
+            case UpdateType.CallbackQuery:
+                CallbackQuery callbackQuery = update.CallbackQuery!;
+                text = callbackQuery.Data!;
+                chatId = callbackQuery.Message!.Chat.Id;
+                break;
+            default:
+                _logger!.Warn($"Unknown message type {update.Type}");
+                return;
+        }
 
         if (_logger!.IsWarn) _logger.Warn($"Received message. ChatId: {chatId} Text {text}");
 
