@@ -30,11 +30,19 @@ public class LighthouseHealthTracker
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_authKey}");
             HttpContent content = (await client.GetAsync("http://localhost:5062/lighthouse/validators")).Content;
 
-            var response = _jsonSerializer.Deserialize<ValidatorsJsonResponse>(await content.ReadAsStringAsync());
+            var response = _jsonSerializer.Deserialize<JsonResponse<ValidatorKeyAndEnabled[]>>(await content.ReadAsStringAsync());
             List<string> result = new();
-            foreach (ValidatorInfo validatorInfo in response.Data)
+            foreach (ValidatorKeyAndEnabled key in response.Data!)
             {
-                result.Add($"Validator pub key:\n{validatorInfo.VotingPubkey}\nEnabled: {validatorInfo.Enabled}");
+                content = (await client.GetAsync(
+                        $"http://localhost:5052/eth/v1/beacon/states/head/validators/{key.VotingPubkey}"))
+                    .Content;
+
+                var info =
+                    _jsonSerializer.Deserialize<JsonResponse<ValidatorInfo>>(await content.ReadAsStringAsync()).Data!;
+
+                result.Add(
+                    $"Validator pub key:\n{key.VotingPubkey}\nIndex: {info.Index}\nStatus: {info.Status}\nBalance: {info.Balance} GWei");
             }
 
             return result;
@@ -47,6 +55,16 @@ public class LighthouseHealthTracker
 
     private class ValidatorInfo
     {
+        [JsonProperty(PropertyName = "index")]
+        public string Index { get; set; } = string.Empty;
+        [JsonProperty(PropertyName = "balance")]
+        public string Balance { get; set; } = string.Empty;
+        [JsonProperty(PropertyName = "status")]
+        public string Status { get; set; } = string.Empty;
+    }
+
+    private class ValidatorKeyAndEnabled
+    {
         [JsonProperty(PropertyName = "enabled")]
         public bool Enabled { get; set; }
 
@@ -54,9 +72,9 @@ public class LighthouseHealthTracker
         public string VotingPubkey { get; set; } = string.Empty;
     }
 
-    private class ValidatorsJsonResponse
+    private class JsonResponse<T>
     {
         [JsonProperty(PropertyName = "data")]
-        public ValidatorInfo[] Data { get; set; } = Array.Empty<ValidatorInfo>();
+        public T? Data { get; set; }
     }
 }
