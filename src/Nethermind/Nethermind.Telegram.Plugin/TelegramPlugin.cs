@@ -270,7 +270,7 @@ public class TelegramPlugin : INethermindPlugin
     private static readonly InlineKeyboardButton _getAccountButton =
         InlineKeyboardButton.WithCallbackData("Get account data", "/getAccount");
     private static readonly InlineKeyboardButton _validatorsButton =
-        InlineKeyboardButton.WithCallbackData("Get account data", "/validators");
+        InlineKeyboardButton.WithCallbackData("Get validators info", "/validators");
 
     private static readonly InlineKeyboardButton[][] _buttons = new[]
     {
