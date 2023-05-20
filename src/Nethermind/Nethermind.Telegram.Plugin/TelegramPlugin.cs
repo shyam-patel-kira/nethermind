@@ -181,20 +181,25 @@ public class TelegramPlugin : INethermindPlugin
         {
             _chats[chatId] = null;
 
-            await SendTextWithCommandButtons(bot, chatId, $"Tracking Nethermind node: {_metricsConfig!.NodeName}", cancellationToken);
+            await SendTextWithCommandButtons(bot, chatId, $"Tracking Nethermind node: {_metricsConfig!.NodeName}",
+                cancellationToken);
         }
         else if (text == "/stop")
         {
             _chats.Remove(chatId, out Address? address);
-            if (address is not null)
+
+            if (address is null)
             {
-                if (_trackedAddresses.TryGetValue(address, out ConcurrentHashSet<long>? chats))
-                {
-                    chats.TryRemove(chatId);
-                }
-                await SendTextWithCommandButtons(bot, chatId, $"Stopped tracking address: {address}", cancellationToken);
+                await SendTextWithCommandButtons(bot, chatId, $"Not tracking any address", cancellationToken);
+                return;
             }
-            await SendTextWithCommandButtons(bot, chatId, $"Not tracking any address", cancellationToken);
+
+            if (_trackedAddresses.TryGetValue(address, out ConcurrentHashSet<long>? chats))
+            {
+                chats.TryRemove(chatId);
+            }
+
+            await SendTextWithCommandButtons(bot, chatId, $"Stopped tracking address: {address}", cancellationToken);
         }
         else if (text == "/track")
         {
@@ -237,9 +242,10 @@ public class TelegramPlugin : INethermindPlugin
     private static readonly InlineKeyboardButton _getAccountButton =
         InlineKeyboardButton.WithCallbackData("Get account data", "/getAccount");
 
-    private static readonly InlineKeyboardButton[] _buttons = new[]
+    private static readonly InlineKeyboardButton[][] _buttons = new[]
     {
-        _healthButton, _stopTrackingButton, _trackButton, _statusButton, _getAccountButton
+        new[] { _healthButton }, new[] { _stopTrackingButton }, new[] { _trackButton },
+        new[] { _statusButton }, new[] { _getAccountButton }
     };
 
     private static readonly InlineKeyboardMarkup _inlineKeyboard = new(_buttons);
