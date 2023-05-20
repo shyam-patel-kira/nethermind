@@ -18,5 +18,7 @@ namespace Nethermind.Api
         CheckHealthResult CheckHealth();
 
         bool CheckClAlive();
+
+        IList<(string, double, double)> GetDiskSpaceInfo();
     }
 }

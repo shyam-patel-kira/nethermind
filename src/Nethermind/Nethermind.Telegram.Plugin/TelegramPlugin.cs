@@ -3,9 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using ConcurrentCollections;
 using Nethermind.Api;
 using Nethermind.Api.Extensions;
 using Nethermind.Core;
+using Nethermind.Core.Crypto;
 using Nethermind.Int256;
 using Nethermind.Logging;
 using Nethermind.Monitoring.Config;
@@ -31,8 +33,15 @@ public class TelegramPlugin : INethermindPlugin
 
     private TelegramBotClient? _bot;
 
-    private ConcurrentDictionary<long, Address?> _chats = new();
-    private ConcurrentDictionary<Address, long> _trackedAddresses = new();
+    private readonly ConcurrentDictionary<long, Address?> _chats = new();
+    private readonly ConcurrentDictionary<Address, ConcurrentHashSet<long>> _trackedAddresses = new();
+    private readonly ConcurrentDictionary<long, WaitFor> _waiting = new();
+
+    enum WaitFor
+    {
+        GetAccount,
+        Track
+    }
 
     public Task Init(INethermindApi nethermindApi)
     {
@@ -80,6 +89,70 @@ public class TelegramPlugin : INethermindPlugin
         _api!.BlockchainProcessor!.Tracers.Add(tracker);
     }
 
+    private async Task<bool> HandleWaitingForMessage(ITelegramBotClient botClient, long chatId, string text,
+        CancellationToken cancellationToken)
+    {
+        if (_waiting.TryGetValue(chatId, out WaitFor waitingFor))
+        {
+            try
+            {
+                if (waitingFor == WaitFor.Track)
+                {
+
+                    Address address = new(text);
+                    _chats[chatId] = address;
+                    _trackedAddresses.GetOrAdd(address, v => new ConcurrentHashSet<long>()).Add(chatId);
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: $"Tracking address {address}",
+                        cancellationToken: cancellationToken);
+
+                }
+                else if (waitingFor == WaitFor.GetAccount)
+                {
+                    Address address = new(text);
+
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: $"Tracking address {address}",
+                        cancellationToken: cancellationToken);
+
+                    Keccak stateRoot = _api!.BlockTree!.BestSuggestedHeader!.StateRoot!;
+
+                    Account? account = _api.StateReader!.GetAccount(stateRoot, address);
+
+                    if (account is null)
+                    {
+                        await botClient.SendTextMessageAsync(
+                            chatId: chatId,
+                            text: $"Unknown account: {address}",
+                            cancellationToken: cancellationToken);
+                    }
+                    else
+                    {
+                        await botClient.SendTextMessageAsync(
+                            chatId: chatId,
+                            text: $"Balance: {account.Balance} Nonce: {account.Nonce}",
+                            cancellationToken: cancellationToken);
+                    }
+                }
+
+                _waiting.TryRemove(chatId, out var _);
+            }
+            catch (Exception)
+            {
+                await botClient.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: $"Can't parse address {text}",
+                    cancellationToken: cancellationToken);
+            }
+            return true;
+        }
+
+        return false;
+    }
+
     async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         if (update.Message is null || update.Message.Text is null) return;
@@ -88,6 +161,11 @@ public class TelegramPlugin : INethermindPlugin
         string text = message.Text;
 
         long chatId = message.Chat.Id;
+
+        if (await HandleWaitingForMessage(botClient, chatId, text, cancellationToken))
+        {
+            return;
+        }
 
         if (text == "/start")
         {
@@ -102,7 +180,10 @@ public class TelegramPlugin : INethermindPlugin
             _chats.Remove(chatId, out Address? address);
             if (address is not null)
             {
-                _trackedAddresses.Remove(address, out long _);
+                if (_trackedAddresses.TryGetValue(address, out ConcurrentHashSet<long>? chats))
+                {
+                    chats.TryRemove(chatId);
+                }
             }
         } else if (text == "/track")
         {
@@ -110,6 +191,7 @@ public class TelegramPlugin : INethermindPlugin
                 chatId: chatId,
                 text: "Enter address to track",
                 cancellationToken: cancellationToken);
+            _waiting[chatId] = WaitFor.Track;
         }
         else if (text == "/health")
         {
@@ -131,37 +213,67 @@ public class TelegramPlugin : INethermindPlugin
                 }
             }
         }
-        else
+        else if(text == "/status")
         {
-            try
-            {
-                Address address = new(text);
-                _chats[chatId] = address;
-                _trackedAddresses[address] = chatId;
-            }
-            catch (Exception)
+            if (_api!.NodeHealthService is not null)
             {
                 await botClient.SendTextMessageAsync(
                     chatId: chatId,
-                    text: $"Unknown command {text}",
+                    text: $"Head block: {_api.BlockTree!.BestSuggestedHeader!.ToString(BlockHeader.Format.Short)}",
                     cancellationToken: cancellationToken);
+
+                var diskSpaceInfos = _api.NodeHealthService.GetDiskSpaceInfo();
+
+                await botClient.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: "Available disk space:",
+                    cancellationToken: cancellationToken);
+
+                foreach ((string dir, double space, double percentage) diskSpaceInfo in diskSpaceInfos)
+                {
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: $"Disk {diskSpaceInfo.dir} available space: {diskSpaceInfo.space}({diskSpaceInfo.percentage:F2}%)",
+                        cancellationToken: cancellationToken);
+                }
             }
+        }
+        else if (text == "/getAccount")
+        {
+            await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: $"Enter address",
+                cancellationToken: cancellationToken);
+            _waiting[chatId] = WaitFor.GetAccount;
+        }
+        else
+        {
+            await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: $"Unknown command {text}",
+                cancellationToken: cancellationToken);
         }
     }
 
     void Callback(Address from, Address to, UInt256 value)
     {
-        if (_trackedAddresses.TryGetValue(from, out long chatId1))
+        if (_trackedAddresses.TryGetValue(from, out ConcurrentHashSet<long>? chats1))
         {
-            _bot!.SendTextMessageAsync(
-                chatId: chatId1,
-                text: $"Send to: {to} value {value}");
+            foreach (long chatId in chats1)
+            {
+                _bot!.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: $"Sent to: {to} value {value}");
+            }
         }
-        else if(_trackedAddresses.TryGetValue(to, out long chatId2))
+        if(_trackedAddresses.TryGetValue(to, out ConcurrentHashSet<long>? chats2))
         {
-            _bot!.SendTextMessageAsync(
-                chatId: chatId2,
-                text: $"Received from: {from} value {value}");
+            foreach (long chatId in chats2)
+            {
+                _bot!.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: $"Received from: {from} value {value}");
+            }
         }
     }
 

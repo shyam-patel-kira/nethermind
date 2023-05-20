@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.IO.Abstractions;
 using Nethermind.Api;
 using Nethermind.Blockchain.Services;
@@ -123,6 +122,21 @@ namespace Nethermind.HealthChecks
             }
 
             return new CheckHealthResult() { Healthy = healthy, Errors = errors, Messages = messages, IsSyncing = syncingResult.IsSyncing };
+        }
+
+        public IList<(string, double, double)> GetDiskSpaceInfo()
+        {
+            List<(string, double, double)> result = new();
+
+            for (int index = 0; index < _drives.Length; index++)
+            {
+                IDriveInfo drive = _drives[index];
+                double freeSpacePercentage = drive.GetFreeSpacePercentage();
+                double freeSpace = drive.GetFreeSpaceInGiB();
+                result.Add((drive.RootDirectory.FullName, freeSpace, freeSpacePercentage));
+            }
+
+            return result;
         }
 
         private ulong? GetBlockProcessorIntervalHint()
