@@ -81,13 +81,13 @@ public class TelegramPlugin : INethermindPlugin
         _addressTracker = new(_bot!);
         _api!.BlockchainProcessor!.Tracers.Add(_addressTracker);
 
-        if (_config.AccessToken is not null)
+        if (_config.LighthouseAuthKey is not null)
         {
-            _lighthouseHealthTracker = new LighthouseHealthTracker(_config.AccessToken);
+            _lighthouseHealthTracker = new LighthouseHealthTracker(_config.LighthouseAuthKey);
         }
         else
         {
-            _logger.Warn("Access token is not specified");
+            _logger.Warn("LighthouseAuthKey is not specified");
         }
 
         _bot!.StartReceiving(
