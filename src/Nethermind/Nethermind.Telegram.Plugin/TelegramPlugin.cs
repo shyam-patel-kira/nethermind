@@ -31,6 +31,7 @@ public class TelegramPlugin : INethermindPlugin
 
     private TelegramBotClient? _bot;
     private AddressTracker? _addressTracker;
+    private LighthouseHealthTracker? _lighthouseHealthTracker;
 
 
     private readonly ConcurrentDictionary<long, WaitFor> _waiting = new();
@@ -52,7 +53,8 @@ public class TelegramPlugin : INethermindPlugin
         {
             if (_config.AccessToken is null)
             {
-                if (_logger.IsWarn) _logger.Warn("Access token is not configured");
+                _config.Enabled = false;
+                if (_logger.IsWarn) _logger.Warn("Access token is not configured. Telegram bot is disabled");
                 return Task.CompletedTask;
             }
 
@@ -62,29 +64,38 @@ public class TelegramPlugin : INethermindPlugin
         return Task.CompletedTask;
     }
 
-    public async Task InitNetworkProtocol()
+    public Task InitNetworkProtocol()
     {
         if (!_config!.Enabled)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        User me = await _bot!.GetMeAsync();
-        if (_logger!.IsInfo) _logger.Info($"Starting bot {me.Username}");
+        if (_logger!.IsInfo) _logger.Info("Starting Telegram bot");
 
         ReceiverOptions receiverOptions = new ()
         {
             AllowedUpdates = Array.Empty<UpdateType>()
         };
 
+        _addressTracker = new(_bot!);
+        _api!.BlockchainProcessor!.Tracers.Add(_addressTracker);
+
+        if (_config.AccessToken is not null)
+        {
+            _lighthouseHealthTracker = new LighthouseHealthTracker(_config.AccessToken);
+        }
+        else
+        {
+            _logger.Warn("Access token is not specified");
+        }
+
         _bot!.StartReceiving(
             updateHandler: HandleUpdateAsync,
             pollingErrorHandler: HandlePollingErrorAsync,
             receiverOptions: receiverOptions);
 
-        _addressTracker = new(_bot!);
-
-        _api!.BlockchainProcessor!.Tracers.Add(_addressTracker);
+        return Task.CompletedTask;
     }
 
     private async Task<bool> HandleWaitingForMessage(ITelegramBotClient bot, long chatId, string text,
@@ -129,7 +140,7 @@ public class TelegramPlugin : INethermindPlugin
 
                 await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
 
-                _waiting.TryRemove(chatId, out var _);
+                _waiting.TryRemove(chatId, out _);
             }
             catch (Exception)
             {
@@ -214,6 +225,22 @@ public class TelegramPlugin : INethermindPlugin
                 text: "Enter address",
                 cancellationToken: cancellationToken);
             _waiting[chatId] = WaitFor.GetAccount;
+        }
+        else if (text == "/validators")
+        {
+            if (_lighthouseHealthTracker is not null)
+            {
+                string info = await _lighthouseHealthTracker.GetValidatorInfo();
+                await bot.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: info,
+                    cancellationToken: cancellationToken);
+                await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
+            }
+            else
+            {
+                await SendTextWithCommandButtons(bot, chatId, $"Lighthouse is not configured: {text}", cancellationToken);
+            }
         }
         else
         {

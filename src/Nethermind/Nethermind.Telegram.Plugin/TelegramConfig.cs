@@ -7,4 +7,5 @@ public class TelegramConfig : ITelegramConfig
 {
     public bool Enabled { get; set; } = false;
     public string? AccessToken { get; set; }
+    public string? LighthouseAuthKey { get; set; }
 }

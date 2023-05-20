@@ -16,4 +16,9 @@ public interface ITelegramConfig : IConfig
         Description = "Your telegram bot access token",
         DefaultValue = "null")]
     string? AccessToken { get; set; }
+
+    [ConfigItem(
+        Description = "Lighthouse http auth key",
+        DefaultValue = "null")]
+    string? LighthouseAuthKey { get; set; }
 }
