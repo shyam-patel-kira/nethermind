@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Nethermind.Api;
@@ -83,7 +84,7 @@ public class TelegramPlugin : INethermindPlugin
 
         if (_config.LighthouseAuthKey is not null)
         {
-            _lighthouseHealthTracker = new LighthouseHealthTracker(_config.LighthouseAuthKey);
+            _lighthouseHealthTracker = new LighthouseHealthTracker(_config.LighthouseAuthKey, _api.EthereumJsonSerializer);
         }
         else
         {
@@ -230,11 +231,21 @@ public class TelegramPlugin : INethermindPlugin
         {
             if (_lighthouseHealthTracker is not null)
             {
-                string info = await _lighthouseHealthTracker.GetValidatorInfo();
-                await bot.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: info,
-                    cancellationToken: cancellationToken);
+                List<string>? infos = await _lighthouseHealthTracker.GetValidatorInfo();
+                if (infos is null)
+                {
+                    await SendTextWithCommandButtons(bot, chatId, "Failed to get validator info?", cancellationToken);
+                    return;
+                }
+
+                foreach (string info in infos)
+                {
+                    await bot.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: info,
+                        cancellationToken: cancellationToken);
+                }
+
                 await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
             }
             else
@@ -258,11 +269,13 @@ public class TelegramPlugin : INethermindPlugin
         InlineKeyboardButton.WithCallbackData("Node status", "/status");
     private static readonly InlineKeyboardButton _getAccountButton =
         InlineKeyboardButton.WithCallbackData("Get account data", "/getAccount");
+    private static readonly InlineKeyboardButton _validatorsButton =
+        InlineKeyboardButton.WithCallbackData("Get account data", "/validators");
 
     private static readonly InlineKeyboardButton[][] _buttons = new[]
     {
         new[] { _healthButton }, new[] { _stopTrackingButton }, new[] { _trackButton },
-        new[] { _statusButton }, new[] { _getAccountButton }
+        new[] { _statusButton }, new[] { _getAccountButton }, new[] { _validatorsButton }
     };
 
     private static readonly InlineKeyboardMarkup _inlineKeyboard = new(_buttons);
