@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using ConcurrentCollections;
 using Nethermind.Api;
 using Nethermind.Api.Extensions;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
-using Nethermind.Int256;
 using Nethermind.Logging;
 using Nethermind.Monitoring.Config;
 using Telegram.Bot;
@@ -33,9 +30,9 @@ public class TelegramPlugin : INethermindPlugin
     private ILogger? _logger;
 
     private TelegramBotClient? _bot;
+    private AddressTracker? _addressTracker;
 
-    private readonly ConcurrentDictionary<long, Address?> _chats = new();
-    private readonly ConcurrentDictionary<Address, ConcurrentHashSet<long>> _trackedAddresses = new();
+
     private readonly ConcurrentDictionary<long, WaitFor> _waiting = new();
 
     enum WaitFor
@@ -85,9 +82,9 @@ public class TelegramPlugin : INethermindPlugin
             pollingErrorHandler: HandlePollingErrorAsync,
             receiverOptions: receiverOptions);
 
-        AddressTracker tracker = new(Callback);
+        _addressTracker = new(_bot!);
 
-        _api!.BlockchainProcessor!.Tracers.Add(tracker);
+        _api!.BlockchainProcessor!.Tracers.Add(_addressTracker);
     }
 
     private async Task<bool> HandleWaitingForMessage(ITelegramBotClient bot, long chatId, string text,
@@ -100,8 +97,7 @@ public class TelegramPlugin : INethermindPlugin
                 if (waitingFor == WaitFor.Track)
                 {
                     Address address = new(text);
-                    _chats[chatId] = address;
-                    _trackedAddresses.GetOrAdd(address, v => new ConcurrentHashSet<long>()).Add(chatId);
+                    _addressTracker!.TrackAddress(address, chatId);
 
                     await bot.SendTextMessageAsync(
                         chatId: chatId,
@@ -162,6 +158,7 @@ public class TelegramPlugin : INethermindPlugin
                 break;
             case UpdateType.CallbackQuery:
                 CallbackQuery callbackQuery = update.CallbackQuery!;
+                await _bot!.AnswerCallbackQueryAsync(callbackQuery.Id, cancellationToken: cancellationToken);
                 text = callbackQuery.Data!;
                 chatId = callbackQuery.Message!.Chat.Id;
                 break;
@@ -179,24 +176,17 @@ public class TelegramPlugin : INethermindPlugin
 
         if (text == "/start")
         {
-            _chats[chatId] = null;
-
             await SendTextWithCommandButtons(bot, chatId, $"Tracking Nethermind node: {_metricsConfig!.NodeName}",
                 cancellationToken);
         }
         else if (text == "/stop")
         {
-            _chats.Remove(chatId, out Address? address);
+            Address? address = _addressTracker!.StopTracking(chatId);
 
             if (address is null)
             {
-                await SendTextWithCommandButtons(bot, chatId, $"Not tracking any address", cancellationToken);
+                await SendTextWithCommandButtons(bot, chatId, $"Not tracking", cancellationToken);
                 return;
-            }
-
-            if (_trackedAddresses.TryGetValue(address, out ConcurrentHashSet<long>? chats))
-            {
-                chats.TryRemove(chatId);
             }
 
             await SendTextWithCommandButtons(bot, chatId, $"Stopped tracking address: {address}", cancellationToken);
@@ -221,7 +211,7 @@ public class TelegramPlugin : INethermindPlugin
         {
             await bot.SendTextMessageAsync(
                 chatId: chatId,
-                text: $"Enter address",
+                text: "Enter address",
                 cancellationToken: cancellationToken);
             _waiting[chatId] = WaitFor.GetAccount;
         }
@@ -307,28 +297,6 @@ public class TelegramPlugin : INethermindPlugin
             }
 
             await SendTextWithCommandButtons(bot, chatId, "Anything else?", cancellationToken);
-        }
-    }
-
-    void Callback(Address from, Address to, UInt256 value)
-    {
-        if (_trackedAddresses.TryGetValue(from, out ConcurrentHashSet<long>? chats1))
-        {
-            foreach (long chatId in chats1)
-            {
-                _bot!.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: $"Sent to: {to} value {value}");
-            }
-        }
-        if(_trackedAddresses.TryGetValue(to, out ConcurrentHashSet<long>? chats2))
-        {
-            foreach (long chatId in chats2)
-            {
-                _bot!.SendTextMessageAsync(
-                    chatId: chatId,
-                    text: $"Received from: {from} value {value}");
-            }
         }
     }
 
