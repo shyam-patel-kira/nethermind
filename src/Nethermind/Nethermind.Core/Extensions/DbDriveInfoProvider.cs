@@ -33,6 +33,7 @@ namespace Nethermind.Core.Extensions
             DirectoryInfo topDir = new(dbPath);
             if (topDir.Exists)
             {
+                Console.WriteLine($"DIR EXISTS");
                 HashSet<IDriveInfo> driveInfos = new();
                 //the following processing is to overcome specific behaviour on linux where creating DriveInfo for multiple paths on same logical drive
                 //gives instances with these paths (and not logical drive)
@@ -58,6 +59,8 @@ namespace Nethermind.Core.Extensions
 
                 return driveInfos.ToArray();
             }
+
+            Console.WriteLine($"DIR DOES NOT EXIST");
 
             return Array.Empty<IDriveInfo>();
         }
