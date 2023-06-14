@@ -309,7 +309,7 @@ namespace Nethermind.Init.Steps
                     var logger = api.LogManager.GetClassLogger();
                     logger.Error($"DB PATH {pruningDbPath}");
 
-                    IDriveInfo? drive;
+                    IDriveInfo drive;
                     if (api.FileSystem.GetDriveInfos(pruningDbPath).Length != 0)
                     {
                         logger.Error("NON EMPTY");
@@ -318,11 +318,11 @@ namespace Nethermind.Init.Steps
                     else
                     {
                         logger.Error("EMPTY");
-                        drive = null;
+                        throw new ArgumentNullException("drive");
                     }
                     FullPruner pruner = new(fullPruningDb, api.PruningTrigger, pruningConfig, api.BlockTree!,
                         stateReader, api.ProcessExit!, ChainSizes.CreateChainSizeInfo(api.ChainSpec.ChainId),
-                        drive!, api.LogManager);
+                        drive, api.LogManager);
                     api.DisposeStack.Push(pruner);
                 }
             }
