@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -307,7 +308,22 @@ namespace Nethermind.Init.Steps
                     }
 
                     var logger = api.LogManager.GetClassLogger();
-                    logger.Error($"DB PATH {pruningDbPath}");
+
+                    DirectoryInfo baze1 = new("/nethermind/nethermind_db/hive");
+                    logger.Error($"DB PATH {pruningDbPath} exists {baze1.Exists}");
+
+                    if (baze1.Exists)
+                    {
+                        foreach (DirectoryInfo dir in baze1.EnumerateDirectories())
+                        {
+                            logger.Error($"SUBDIR {dir.FullName}");
+                        }
+
+                        foreach (FileInfo file in baze1.EnumerateFiles())
+                        {
+                            logger.Error($"FILE {file.FullName}");
+                        }
+                    }
 
                     IDriveInfo drive;
                     if (api.FileSystem.GetDriveInfos(pruningDbPath).Length != 0)
