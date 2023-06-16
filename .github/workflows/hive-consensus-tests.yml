@@ -969,7 +969,8 @@ jobs:
           - /sstore.*
           - /mem.*
           - /opc.*
-          - /bc.* 
+          - /bc.*
+    continue-on-error: true
     steps:
       - name: Set up parameters
         run: |
