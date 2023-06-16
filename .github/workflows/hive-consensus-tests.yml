@@ -963,6 +963,13 @@ jobs:
           #- bcValidBlockTest
           #- bcWalletTest
           - /ecmul.*
+          - /ecpairing.*
+          - /ecadd.*
+          - /static.*
+          - /sstore.*
+          - /mem.*
+          - /opc.*
+          - /bc.* 
     steps:
       - name: Set up parameters
         run: |
