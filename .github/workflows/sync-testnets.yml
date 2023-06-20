@@ -64,7 +64,7 @@ jobs:
           #mkdir pkg
           #unzip pkg.zip -d pkg
           #cd pkg
-          ./Nethermind.Runner -c sepolia
+          ./Nethermind.Runner
         shell: bash
 
       #- name: Run Sedge
