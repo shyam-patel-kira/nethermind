@@ -12,7 +12,7 @@ env:
 jobs:
   chiado:
     name: "Run sync of chiado testnet"
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -54,8 +54,12 @@ jobs:
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
-          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          dotnet run -c debug
+          curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.0.0.37452.nupkg -o pkg.zip
+          mkdir pkg
+          unzip pkg.zip -d pkg
+          dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
+          #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
+          #dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
