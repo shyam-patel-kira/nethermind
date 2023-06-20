@@ -58,7 +58,7 @@ jobs:
           #mkdir pkg
           #unzip pkg.zip -d pkg
           #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
-          find /usr/local -name '*libbz*'
+          sudo find /usr -name '*libbz*'
           #find /opt -name 'libbz*'
           #sudo ln -s /usr/lib/libbz2.dylib /usr/local/lib/libbz.dylib
           #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
