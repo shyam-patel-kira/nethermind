@@ -54,11 +54,13 @@ jobs:
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
-          curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.0.0.37452.nupkg -o pkg.zip
-          mkdir pkg
-          unzip pkg.zip -d pkg
-          dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
-          find /usr -name 'libbz*'
+          #curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.0.0.37452.nupkg -o pkg.zip
+          #mkdir pkg
+          #unzip pkg.zip -d pkg
+          #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
+          find /usr/local -name 'libbz*'
+          find /usr/homebrew -name 'libbz*'
+          find /opt -name 'libbz*'
           #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
           #dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
