@@ -43,14 +43,18 @@ jobs:
       
       - name: Install with brew and start
         run: |
-          brew update
-          brew install rocksdb
-          echo $(brew --prefix)
-          export DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib
-          brew install lz4 snappy zstd
-          brew tap nethermindeth/nethermind
-          brew install nethermind
-          nethermind
+          #brew update
+          #brew install rocksdb
+          #echo $(brew --prefix)
+          #export DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib
+          #brew install lz4 snappy zstd
+          #brew tap nethermindeth/nethermind
+          #brew install nethermind
+          #nethermind
+          curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.0.0.37452.nupkg -o pkg.zip
+          mkdir pkg
+          unzip pkg.zip -d pkg
+          otool -L pkg/runtimes/osx-x64/native/librocksdb.dylib
         shell: bash
 
       #- name: Run Sedge
