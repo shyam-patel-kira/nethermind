@@ -50,7 +50,7 @@ jobs:
           #brew install rocksdb
           #echo $(brew --prefix)
           #export DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib
-          brew install lz4 snappy zstd zlib #bzip2
+          brew install lz4 snappy zstd zlib bzip2
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
@@ -60,7 +60,7 @@ jobs:
           #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
           find /usr/local -name 'libbz*'
           #find /opt -name 'libbz*'
-          sudo ln -s `find /usr/local -type f -name "libbz2.a"` /usr/local/lib/libbz.dylib
+          sudo ln -s /usr/local/lib/libbz.dylib `find /usr/local -type f -name "libbz2.a"` 
           cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
           dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
