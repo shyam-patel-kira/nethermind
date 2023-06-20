@@ -258,7 +258,7 @@ namespace Nethermind.Runner
             };
 
             if (nativeLibraryName.Contains("libbz"))
-                alternativePath = Directory.Exists("/usr/local/opt/bzip2") ? Directory.EnumerateFiles("/usr/local/opt/bzip2", "libbz.dylib", SearchOption.AllDirectories).FirstOrDefault() : null;
+                alternativePath = "/usr/local/Cellar/bzip2/1.0.8/lib/libbz2.a";
 
 
             return alternativePath is null ? IntPtr.Zero : NativeLibrary.Load(alternativePath);
