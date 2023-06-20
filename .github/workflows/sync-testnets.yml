@@ -61,8 +61,9 @@ jobs:
           #find /usr/local -name 'libbz*'
           #find /opt -name 'libbz*'
           sudo ln -s `find /usr/local/miniconda -type f -name "libbz2.dylib"` /usr/local/lib/libbz.dylib
-          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          dotnet run -c debug
+          find /usr/local/lib -type f -name "libbz2.dylib"
+          #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
+          #dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
