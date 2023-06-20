@@ -22,7 +22,10 @@ jobs:
         run: |
           echo "BUILD_TIMESTAMP=$(date '+%s')" >> $GITHUB_OUTPUT
           echo "COMMIT_HASH=$(git describe --always --exclude=* --abbrev=40)" >> $GITHUB_OUTPUT
-          
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7
       #- name: Set up Docker Buildx
       #  uses: docker/setup-buildx-action@v2
 #
@@ -51,10 +54,16 @@ jobs:
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
-          curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
-          mkdir pkg
-          unzip pkg.zip -d pkg
-          cd pkg
+          cd nethermind/src/Nethermind/Nethermind.Runner
+          dotnet publish -c release -r osx-x64 -o $GITHUB_WORKSPACE/neth --sc true \
+            -p:Deterministic=true \
+            -p:IncludeAllContentForSelfExtract=true \
+            -p:PublishSingleFile=true
+          cd $GITHUB_WORKSPACE/neth
+          #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
+          #mkdir pkg
+          #unzip pkg.zip -d pkg
+          #cd pkg
           ./Nethermind.Runner -c sepolia
         shell: bash
 
