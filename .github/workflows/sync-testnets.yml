@@ -55,17 +55,13 @@ jobs:
           #brew install nethermind
           #nethermind
           cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          dotnet publish -c release -r osx-x64 -o $GITHUB_WORKSPACE/neth --sc true \
-            -p:Deterministic=true \
-            -p:IncludeAllContentForSelfExtract=true \
-            -p:PublishSingleFile=true
-          cp -r configs $GITHUB_WORKSPACE/neth
-          cd $GITHUB_WORKSPACE/neth
+          dotnet run -c debug
+          #cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
           #unzip pkg.zip -d pkg
           #cd pkg
-          ./Nethermind.Runner
+          #./Nethermind.Runner
         shell: bash
 
       #- name: Run Sedge
