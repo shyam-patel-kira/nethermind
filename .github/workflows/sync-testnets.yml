@@ -60,6 +60,7 @@ jobs:
           #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
           #find /usr/local -name 'libbz*'
           #find /opt -name 'libbz*'
+          sudo mkdir /usr/local/lib
           sudo ln -s `find /usr/local -type f -name "libbz2*"` /usr/local/lib/libbz.dylib
           cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
           dotnet run -c debug
