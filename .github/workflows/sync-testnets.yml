@@ -54,8 +54,7 @@ jobs:
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
-          ls $GITHUB_WORKSPACE/nethermind
-          cd $GITHUB_WORKSPACE/nethermind/src/Nethermind/Nethermind.Runner
+          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
           dotnet publish -c release -r osx-x64 -o $GITHUB_WORKSPACE/neth --sc true \
             -p:Deterministic=true \
             -p:IncludeAllContentForSelfExtract=true \
