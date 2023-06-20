@@ -60,9 +60,10 @@ jobs:
           #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
           find /usr/local -name 'libbz*'
           #find /opt -name 'libbz*'
-          sudo ln -s /usr/local/lib/libbz.dylib `find /usr/local -type f -name "libbz2.a"` 
-          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          dotnet run -c debug
+          find /usr/local -type f -name "libbz2.a"
+          #sudo ln -s `find /usr/local -type f -name "libbz2.a"` /usr/local/lib/libbz.dylib
+          #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
+          #dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
