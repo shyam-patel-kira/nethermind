@@ -59,6 +59,7 @@ jobs:
             -p:Deterministic=true \
             -p:IncludeAllContentForSelfExtract=true \
             -p:PublishSingleFile=true
+          cp -r configs $GITHUB_WORKSPACE/neth
           cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
