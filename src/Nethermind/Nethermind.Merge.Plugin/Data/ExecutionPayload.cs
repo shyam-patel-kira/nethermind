@@ -9,10 +9,8 @@ using Nethermind.Core;
 using Nethermind.Core.Crypto;
 using Nethermind.Core.Specs;
 using Nethermind.Int256;
-using Nethermind.Serialization.Json;
 using Nethermind.Serialization.Rlp;
 using Nethermind.State.Proofs;
-using Newtonsoft.Json;
 
 namespace Nethermind.Merge.Plugin.Data;
 
@@ -98,14 +96,12 @@ public class ExecutionPayload
     /// Gets or sets <see cref="Block.DataGasUsed"/> as defined in
     /// <see href="https://eips.ethereum.org/EIPS/eip-4844">EIP-4844</see>.
     /// </summary>
-    [JsonProperty(ItemConverterType = typeof(NullableUInt256Converter), NullValueHandling = NullValueHandling.Ignore)]
     public ulong? DataGasUsed { get; set; }
 
     /// <summary>
     /// Gets or sets <see cref="Block.ExcessDataGas"/> as defined in
     /// <see href="https://eips.ethereum.org/EIPS/eip-4844">EIP-4844</see>.
     /// </summary>
-    [JsonProperty(ItemConverterType = typeof(NullableUInt256Converter), NullValueHandling = NullValueHandling.Ignore)]
     public ulong? ExcessDataGas { get; set; }
 
 
@@ -128,9 +124,7 @@ public class ExecutionPayload
                 BlockNumber,
                 GasLimit,
                 Timestamp,
-                ExtraData,
-                DataGasUsed,
-                ExcessDataGas)
+                ExtraData)
             {
                 Hash = BlockHash,
                 ReceiptsRoot = ReceiptsRoot,
@@ -144,6 +138,8 @@ public class ExecutionPayload
                 IsPostMerge = true,
                 TotalDifficulty = totalDifficulty,
                 TxRoot = new TxTrie(transactions).RootHash,
+                DataGasUsed = DataGasUsed,
+                ExcessDataGas = ExcessDataGas,
                 WithdrawalsRoot = Withdrawals is null ? null : new WithdrawalTrie(Withdrawals).RootHash,
             };
 
@@ -187,7 +183,8 @@ public class ExecutionPayload
 public static class ExecutionPayloadExtensions
 {
     public static int GetVersion(this ExecutionPayload executionPayload) =>
-        executionPayload.Withdrawals is null ? 1 : 2;
+        executionPayload.Withdrawals is null ? 1 :
+        executionPayload.DataGasUsed is null && executionPayload.ExcessDataGas is null ? 2 : 3;
 
     public static bool Validate(
         this ExecutionPayload executionPayload,
@@ -195,11 +192,22 @@ public static class ExecutionPayloadExtensions
         int version,
         [NotNullWhen(false)] out string? error)
     {
+        if (spec.IsEip4844Enabled)
+        {
+            if (version != 3)
+            {
+                error = $"ExecutionPayloadV3 expected";
+                return false;
+            }
+            error = null;
+            return true;
+        }
+
         int actualVersion = executionPayload.GetVersion();
 
         error = actualVersion switch
         {
-            1 when spec.WithdrawalsEnabled => "ExecutionPayloadV2 expected",
+            1 when spec.WithdrawalsEnabled => $"ExecutionPayloadV2 expected",
             > 1 when !spec.WithdrawalsEnabled => "ExecutionPayloadV1 expected",
             _ => actualVersion > version ? $"ExecutionPayloadV{version} expected" : null
         };

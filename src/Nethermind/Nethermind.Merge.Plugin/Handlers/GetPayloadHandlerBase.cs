@@ -4,10 +4,10 @@
 using System.Threading.Tasks;
 using Nethermind.Core;
 using Nethermind.Core.Extensions;
+using Nethermind.Core.Specs;
 using Nethermind.JsonRpc;
 using Nethermind.Logging;
 using Nethermind.Merge.Plugin.BlockProduction;
-using Nethermind.Merge.Plugin.Data;
 
 namespace Nethermind.Merge.Plugin.Handlers;
 
@@ -15,12 +15,15 @@ public abstract class GetPayloadHandlerBase<TGetPayloadResult> : IAsyncHandler<b
 {
     private readonly int _apiVersion;
     private readonly IPayloadPreparationService _payloadPreparationService;
+    private readonly ISpecProvider _specProvider;
     private readonly ILogger _logger;
 
-    protected GetPayloadHandlerBase(int apiVersion, IPayloadPreparationService payloadPreparationService, ILogManager logManager)
+    protected GetPayloadHandlerBase(int apiVersion, IPayloadPreparationService payloadPreparationService,
+        ISpecProvider specProvider, ILogManager logManager)
     {
         _apiVersion = apiVersion;
         _payloadPreparationService = payloadPreparationService;
+        _specProvider = specProvider;
         _logger = logManager.GetClassLogger();
     }
 
@@ -37,6 +40,11 @@ public abstract class GetPayloadHandlerBase<TGetPayloadResult> : IAsyncHandler<b
             return ResultWrapper<TGetPayloadResult?>.Fail("unknown payload", MergeErrorCodes.UnknownPayload);
         }
 
+        if (!IsProperFork(blockContext, _specProvider))
+        {
+            return ResultWrapper<TGetPayloadResult?>.Fail("unsupported fork", ErrorCodes.UnsupportedFork);
+        }
+
         if (_logger.IsInfo) _logger.Info($"GetPayloadV{_apiVersion} result: {block.Header.ToString(BlockHeader.Format.Full)}.");
 
         Metrics.GetPayloadRequests++;
@@ -45,4 +53,7 @@ public abstract class GetPayloadHandlerBase<TGetPayloadResult> : IAsyncHandler<b
     }
 
     protected abstract TGetPayloadResult GetPayloadResultFromBlock(IBlockProductionContext blockProductionContext);
+
+    protected virtual bool IsProperFork(IBlockProductionContext blockProductionContext, ISpecProvider specProvider)
+        => true;
 }

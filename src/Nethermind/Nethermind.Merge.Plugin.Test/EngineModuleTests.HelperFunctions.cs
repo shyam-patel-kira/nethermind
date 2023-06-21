@@ -68,11 +68,11 @@ namespace Nethermind.Merge.Plugin.Test
             return Enumerable.Range(0, (int)count).Select(i => BuildTransaction((uint)i, account)).ToArray();
         }
 
-        private ExecutionPayload CreateParentBlockRequestOnHead(IBlockTree blockTree)
+        private ExecutionPayloadV3 CreateParentBlockRequestOnHead(IBlockTree blockTree)
         {
             Block? head = blockTree.Head;
             if (head is null) throw new NotSupportedException();
-            return new ExecutionPayload()
+            return new ExecutionPayloadV3()
             {
                 BlockNumber = head.Number,
                 BlockHash = head.Hash!,
@@ -86,7 +86,7 @@ namespace Nethermind.Merge.Plugin.Test
 
         private static ExecutionPayload CreateBlockRequest(ExecutionPayload parent, Address miner, IList<Withdrawal>? withdrawals = null, ulong? dataGasUsed = null, ulong? excessDataGas = null, Transaction[]? transactions = null)
         {
-            ExecutionPayload blockRequest = new()
+            ExecutionPayloadV3 blockRequest = new()
             {
                 ParentHash = parent.BlockHash,
                 FeeRecipient = miner,
@@ -98,9 +98,17 @@ namespace Nethermind.Merge.Plugin.Test
                 LogsBloom = Bloom.Empty,
                 Timestamp = parent.Timestamp + 1,
                 Withdrawals = withdrawals,
-                DataGasUsed = dataGasUsed,
-                ExcessDataGas = excessDataGas,
             };
+
+            if (dataGasUsed is not null)
+            {
+                blockRequest.DataGasUsed = dataGasUsed.Value;
+            }
+
+            if (excessDataGas is not null)
+            {
+                blockRequest.ExcessDataGas = excessDataGas.Value;
+            }
 
             blockRequest.SetTransactions(transactions ?? Array.Empty<Transaction>());
             TryCalculateHash(blockRequest, out Keccak? hash);

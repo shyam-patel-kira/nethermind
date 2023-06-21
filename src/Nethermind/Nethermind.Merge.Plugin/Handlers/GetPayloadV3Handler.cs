@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
+using Nethermind.Core.Specs;
 using Nethermind.Logging;
 using Nethermind.Merge.Plugin.BlockProduction;
 using Nethermind.Merge.Plugin.Data;
@@ -13,11 +14,15 @@ namespace Nethermind.Merge.Plugin.Handlers;
 /// </summary>
 public class GetPayloadV3Handler : GetPayloadHandlerBase<GetPayloadV3Result>
 {
-    public GetPayloadV3Handler(IPayloadPreparationService payloadPreparationService, ILogManager logManager) : base(
-        3, payloadPreparationService, logManager)
+    public GetPayloadV3Handler(IPayloadPreparationService payloadPreparationService, ISpecProvider specProvider, ILogManager logManager) : base(
+        3, payloadPreparationService, specProvider, logManager)
     {
     }
 
     protected override GetPayloadV3Result GetPayloadResultFromBlock(IBlockProductionContext context) =>
         new(context.CurrentBestBlock!, context.BlockFees, new BlobsBundleV1(context.CurrentBestBlock!));
+
+    protected override bool IsProperFork(IBlockProductionContext blockProductionContext, ISpecProvider specProvider)
+        => blockProductionContext.CurrentBestBlock is not null &&
+            specProvider.GetSpec(blockProductionContext.CurrentBestBlock.Header).IsEip4844Enabled;
 }
