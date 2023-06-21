@@ -50,13 +50,8 @@ jobs:
           #brew install rocksdb
           #echo $(brew --prefix)
           #export DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib
-          echo 'export PATH="/usr/local/opt/bzip2/bin:$PATH"' >> /Users/runner/.bash_profile
-          export LDFLAGS="-L/usr/local/opt/bzip2/lib"
-          export CPPFLAGS="-I/usr/local/opt/bzip2/include"
-          brew install lz4 snappy zstd zlib bzip2
-          echo 'export PATH="/usr/local/opt/bzip2/bin:$PATH"' >> /Users/runner/.bash_profile
-          export LDFLAGS="-L/usr/local/opt/bzip2/lib"
-          export CPPFLAGS="-I/usr/local/opt/bzip2/include"
+          brew install lz4 snappy zstd zlib
+          sudo port install bzip2
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
@@ -64,11 +59,11 @@ jobs:
           #mkdir pkg
           #unzip pkg.zip -d pkg
           #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
-          #sudo find /usr -name '*libbz*'
+          sudo find / -name '*bz2*'
           #find /opt -name 'libbz*'
           #sudo ln -s /usr/lib/libbz2.dylib /usr/local/lib/libbz.dylib
-          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          dotnet run -c debug
+          #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
+          #dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
