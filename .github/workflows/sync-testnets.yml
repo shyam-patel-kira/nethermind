@@ -58,8 +58,7 @@ jobs:
           #mkdir pkg
           #unzip pkg.zip -d pkg
           #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
-          ls /usr/local/Cellar/bzip2/1.0.8/bin
-          sudo find / -name '*bz2.dylib*'
+          sudo find /usr/local/Cellar/bzip2 -name '*.dylib'
           #find /opt -name 'libbz*'
           #sudo ln -s /usr/lib/libbz2.dylib /usr/local/lib/libbz.dylib
           #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
