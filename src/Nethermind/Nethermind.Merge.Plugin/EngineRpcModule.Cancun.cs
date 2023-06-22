@@ -17,9 +17,9 @@ public partial class EngineRpcModule : IEngineRpcModule
     private readonly IAsyncHandler<byte[], GetPayloadV3Result?> _getPayloadHandlerV3;
 
     public Task<ResultWrapper<PayloadStatusV1>> engine_newPayloadV3(ExecutionPayloadV3 executionPayload, byte[]?[] blobVersionedHashes) =>
-        Validate(executionPayload, blobVersionedHashes) ?? NewPayload(executionPayload, 3);
+        ValidateFork(executionPayload) ?? PreValidatePayload(executionPayload, blobVersionedHashes) ?? NewPayload(executionPayload, 3);
 
-    private ResultWrapper<PayloadStatusV1>? Validate(ExecutionPayloadV3 executionPayload, byte[]?[] blobVersionedHashes)
+    private ResultWrapper<PayloadStatusV1>? PreValidatePayload(ExecutionPayloadV3 executionPayload, byte[]?[] blobVersionedHashes)
     {
         ResultWrapper<PayloadStatusV1> ErrorResult(string error)
         {
@@ -33,17 +33,20 @@ public partial class EngineRpcModule : IEngineRpcModule
                 });
         }
 
-        bool IsCorrectFork(ExecutionPayloadV3 executionPayload)
-            => _specProvider.GetSpec(executionPayload.BlockNumber, executionPayload.Timestamp).IsEip4844Enabled;
-
         static IEnumerable<byte[]?> FlattenHashesFromTransactions(ExecutionPayloadV3 payload) =>
             payload.GetTransactions()
                 .Where(t => t.BlobVersionedHashes is not null)
                 .SelectMany(t => t.BlobVersionedHashes!);
 
-        return !IsCorrectFork(executionPayload) ? ResultWrapper<PayloadStatusV1>.Fail("unsupported fork", ErrorCodes.UnsupportedFork)
-            : !FlattenHashesFromTransactions(executionPayload).SequenceEqual(blobVersionedHashes, Bytes.NullableEqualityComparer) ? ErrorResult("Blob versioned hashes do not match")
+        return !FlattenHashesFromTransactions(executionPayload).SequenceEqual(blobVersionedHashes, Bytes.NullableEqualityComparer)
+            ? ErrorResult("Blob versioned hashes do not match")
             : null;
+    }
+
+    private ResultWrapper<PayloadStatusV1>? ValidateFork(ExecutionPayloadV3 executionPayload)
+    {
+        if (_logger.IsWarn) _logger.Warn($"The payload is not supported by the current fork");
+        return executionPayload.IsProperFork(_specProvider) ? null : ResultWrapper<PayloadStatusV1>.Fail("unsupported fork", ErrorCodes.UnsupportedFork);
     }
 
     public async Task<ResultWrapper<GetPayloadV3Result?>> engine_getPayloadV3(byte[] payloadId) =>

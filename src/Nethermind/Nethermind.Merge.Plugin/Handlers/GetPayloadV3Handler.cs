@@ -21,8 +21,4 @@ public class GetPayloadV3Handler : GetPayloadHandlerBase<GetPayloadV3Result>
 
     protected override GetPayloadV3Result GetPayloadResultFromBlock(IBlockProductionContext context) =>
         new(context.CurrentBestBlock!, context.BlockFees, new BlobsBundleV1(context.CurrentBestBlock!));
-
-    protected override bool IsProperFork(IBlockProductionContext blockProductionContext, ISpecProvider specProvider)
-        => blockProductionContext.CurrentBestBlock is not null &&
-            specProvider.GetSpec(blockProductionContext.CurrentBestBlock.Header).IsEip4844Enabled;
 }

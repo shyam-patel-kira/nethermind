@@ -68,11 +68,11 @@ namespace Nethermind.Merge.Plugin.Test
             return Enumerable.Range(0, (int)count).Select(i => BuildTransaction((uint)i, account)).ToArray();
         }
 
-        private ExecutionPayloadV3 CreateParentBlockRequestOnHead(IBlockTree blockTree)
+        private ExecutionPayload CreateParentBlockRequestOnHead(IBlockTree blockTree)
         {
             Block? head = blockTree.Head;
             if (head is null) throw new NotSupportedException();
-            return new ExecutionPayloadV3()
+            return new ExecutionPayload()
             {
                 BlockNumber = head.Number,
                 BlockHash = head.Hash!,
@@ -84,9 +84,12 @@ namespace Nethermind.Merge.Plugin.Test
             };
         }
 
-        private static ExecutionPayload CreateBlockRequest(ExecutionPayload parent, Address miner, IList<Withdrawal>? withdrawals = null, ulong? dataGasUsed = null, ulong? excessDataGas = null, Transaction[]? transactions = null)
+        private static ExecutionPayload CreateBlockRequest(ExecutionPayload parent, Address miner, IList<Withdrawal>? withdrawals = null, Transaction[]? transactions = null)
+            => CreateBlockRequest<ExecutionPayload>(parent, miner, withdrawals, transactions: transactions);
+
+        private static T CreateBlockRequest<T>(ExecutionPayload parent, Address miner, IList<Withdrawal>? withdrawals = null, ulong dataGasUsed = default, ulong excessDataGas = default, Transaction[]? transactions = null) where T : ExecutionPayload, new()
         {
-            ExecutionPayloadV3 blockRequest = new()
+            T blockRequest = new()
             {
                 ParentHash = parent.BlockHash,
                 FeeRecipient = miner,
@@ -100,14 +103,10 @@ namespace Nethermind.Merge.Plugin.Test
                 Withdrawals = withdrawals,
             };
 
-            if (dataGasUsed is not null)
+            if (blockRequest is ExecutionPayloadV3 blockRequestV3)
             {
-                blockRequest.DataGasUsed = dataGasUsed.Value;
-            }
-
-            if (excessDataGas is not null)
-            {
-                blockRequest.ExcessDataGas = excessDataGas.Value;
+                blockRequestV3.DataGasUsed = dataGasUsed;
+                blockRequestV3.ExcessDataGas = excessDataGas;
             }
 
             blockRequest.SetTransactions(transactions ?? Array.Empty<Transaction>());

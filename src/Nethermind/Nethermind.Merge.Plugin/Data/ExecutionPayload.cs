@@ -37,8 +37,6 @@ public class ExecutionPayload
         Timestamp = block.Timestamp;
         BaseFeePerGas = block.BaseFeePerGas;
         Withdrawals = block.Withdrawals;
-        DataGasUsed = block.DataGasUsed;
-        ExcessDataGas = block.ExcessDataGas;
 
         SetTransactions(block.Transactions);
     }
@@ -92,18 +90,6 @@ public class ExecutionPayload
     /// </summary>
     public IEnumerable<Withdrawal>? Withdrawals { get; set; }
 
-    /// <summary>
-    /// Gets or sets <see cref="Block.DataGasUsed"/> as defined in
-    /// <see href="https://eips.ethereum.org/EIPS/eip-4844">EIP-4844</see>.
-    /// </summary>
-    public ulong? DataGasUsed { get; set; }
-
-    /// <summary>
-    /// Gets or sets <see cref="Block.ExcessDataGas"/> as defined in
-    /// <see href="https://eips.ethereum.org/EIPS/eip-4844">EIP-4844</see>.
-    /// </summary>
-    public ulong? ExcessDataGas { get; set; }
-
 
     /// <summary>
     /// Creates the execution block from payload.
@@ -138,8 +124,6 @@ public class ExecutionPayload
                 IsPostMerge = true,
                 TotalDifficulty = totalDifficulty,
                 TxRoot = new TxTrie(transactions).RootHash,
-                DataGasUsed = DataGasUsed,
-                ExcessDataGas = ExcessDataGas,
                 WithdrawalsRoot = Withdrawals is null ? null : new WithdrawalTrie(Withdrawals).RootHash,
             };
 
@@ -183,8 +167,7 @@ public class ExecutionPayload
 public static class ExecutionPayloadExtensions
 {
     public static int GetVersion(this ExecutionPayload executionPayload) =>
-        executionPayload.Withdrawals is null ? 1 :
-        executionPayload.DataGasUsed is null && executionPayload.ExcessDataGas is null ? 2 : 3;
+        executionPayload.Withdrawals is null ? 1 : 2;
 
     public static bool Validate(
         this ExecutionPayload executionPayload,
@@ -192,15 +175,10 @@ public static class ExecutionPayloadExtensions
         int version,
         [NotNullWhen(false)] out string? error)
     {
-        if (spec.IsEip4844Enabled)
+        if (spec.IsEip4844Enabled && executionPayload is not ExecutionPayloadV3)
         {
-            if (version != 3)
-            {
-                error = $"ExecutionPayloadV3 expected";
-                return false;
-            }
-            error = null;
-            return true;
+            error = $"ExecutionPayloadV3 expected";
+            return false;
         }
 
         int actualVersion = executionPayload.GetVersion();
@@ -223,4 +201,11 @@ public static class ExecutionPayloadExtensions
             specProvider.GetSpec(executionPayload.BlockNumber, executionPayload.Timestamp),
             version,
             out error);
+
+    public static bool IsProperFork(this ExecutionPayload executionPayload, ISpecProvider specProvider)
+        => executionPayload switch
+        {
+            ExecutionPayloadV3 _ => specProvider.GetSpec(executionPayload.BlockNumber, executionPayload.Timestamp).IsEip4844Enabled,
+            _ => true,
+        };
 }

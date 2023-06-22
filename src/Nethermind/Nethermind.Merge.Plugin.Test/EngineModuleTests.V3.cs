@@ -35,24 +35,12 @@ namespace Nethermind.Merge.Plugin.Test;
 
 public partial class EngineModuleTests
 {
-    [TestCaseSource(nameof(ExcessDataGasInGetPayloadV3ForDifferentSpecTestSource))]
-    public async Task Data_gas_fields_should_present_in_cancun_only((IReleaseSpec Spec, bool AreDataGasFieldsSet) input)
-    {
-        (IEngineRpcModule rpcModule, string payloadId) = await BuildAndGetPayloadV3Result(input.Spec);
-        ResultWrapper<GetPayloadV2Result?> getPayloadResult =
-            await rpcModule.engine_getPayloadV2(Bytes.FromHexString(payloadId));
-        Assert.That(getPayloadResult.Data!.ExecutionPayload.DataGasUsed.HasValue,
-            Is.EqualTo(input.AreDataGasFieldsSet));
-        Assert.That(getPayloadResult.Data!.ExecutionPayload.ExcessDataGas.HasValue,
-            Is.EqualTo(input.AreDataGasFieldsSet));
-    }
-
     [Test]
     public async Task V1_newpayload_should_be_declined_post_cancun()
     {
         MergeTestBlockchain chain = await CreateBlockchain(releaseSpec: Cancun.Instance);
         IEngineRpcModule rpcModule = CreateEngineModule(chain);
-        ExecutionPayloadV3 executionPayload = (ExecutionPayloadV3)CreateBlockRequest(
+        ExecutionPayload executionPayload = CreateBlockRequest(
             CreateParentBlockRequestOnHead(chain.BlockTree), TestItem.AddressD, withdrawals: Array.Empty<Withdrawal>());
 
         ResultWrapper<PayloadStatusV1> errorCode = (await rpcModule.engine_newPayloadV1(executionPayload));
@@ -65,7 +53,7 @@ public partial class EngineModuleTests
     {
         MergeTestBlockchain chain = await CreateBlockchain(releaseSpec: Cancun.Instance);
         IEngineRpcModule rpcModule = CreateEngineModule(chain);
-        ExecutionPayloadV3 executionPayload = (ExecutionPayloadV3)CreateBlockRequest(
+        ExecutionPayload executionPayload = CreateBlockRequest(
             CreateParentBlockRequestOnHead(chain.BlockTree), TestItem.AddressD, withdrawals: Array.Empty<Withdrawal>());
 
         ResultWrapper<PayloadStatusV1> errorCode = (await rpcModule.engine_newPayloadV2(executionPayload));
@@ -78,7 +66,7 @@ public partial class EngineModuleTests
     {
         MergeTestBlockchain chain = await CreateBlockchain(releaseSpec: Shanghai.Instance);
         IEngineRpcModule rpcModule = CreateEngineModule(chain);
-        ExecutionPayloadV3 executionPayload = (ExecutionPayloadV3)CreateBlockRequest(
+        ExecutionPayloadV3 executionPayload = CreateBlockRequest<ExecutionPayloadV3>(
             CreateParentBlockRequestOnHead(chain.BlockTree), TestItem.AddressD, withdrawals: Array.Empty<Withdrawal>());
 
         ResultWrapper<PayloadStatusV1> errorCode = (await rpcModule.engine_newPayloadV3(executionPayload, new byte[0][]));
@@ -157,14 +145,13 @@ public partial class EngineModuleTests
     private async Task<(JsonRpcService jsonRpcService, JsonRpcContext context, EthereumJsonSerializer serializer, ExecutionPayloadV3 correctExecutionPayload)>
             PreparePayloadRequestEnv()
     {
-        JsonRpcContext context = ;
         MergeTestBlockchain chain = await CreateBlockchain(releaseSpec: Cancun.Instance);
         IEngineRpcModule rpcModule = CreateEngineModule(chain);
         JsonRpcConfig jsonRpcConfig = new() { EnabledModules = new[] { "Engine" } };
         RpcModuleProvider moduleProvider = new(new FileSystem(), jsonRpcConfig, LimboLogs.Instance);
         moduleProvider.Register(new SingletonModulePool<IEngineRpcModule>(new SingletonFactory<IEngineRpcModule>(rpcModule), true));
 
-        ExecutionPayloadV3 executionPayload = (ExecutionPayloadV3)CreateBlockRequest(
+        ExecutionPayloadV3 executionPayload = CreateBlockRequest<ExecutionPayloadV3>(
           CreateParentBlockRequestOnHead(chain.BlockTree), TestItem.AddressD, withdrawals: Array.Empty<Withdrawal>(), dataGasUsed: 0, excessDataGas: 0);
 
         return (new(moduleProvider, LimboLogs.Instance, jsonRpcConfig), new(RpcEndpoint.Http), new(), executionPayload);
@@ -295,7 +282,7 @@ public partial class EngineModuleTests
         (MergeTestBlockchain blockchain, IEngineRpcModule engineRpcModule) = await MockRpc();
         (byte[][] blobVersionedHashes, Transaction[] transactions) = BuildTransactionsAndBlobVersionedHashesList(hashesFirstBytes, transactionsAndFirstBytesOfTheirHashes, blockchain.SpecProvider.ChainId);
 
-        ExecutionPayloadV3 executionPayload = (ExecutionPayloadV3)CreateBlockRequest(
+        ExecutionPayloadV3 executionPayload = CreateBlockRequest<ExecutionPayloadV3>(
             CreateParentBlockRequestOnHead(blockchain.BlockTree), TestItem.AddressD, withdrawals: Array.Empty<Withdrawal>(), transactions: transactions);
         ResultWrapper<PayloadStatusV1> result = await engineRpcModule.engine_newPayloadV3(executionPayload, blobVersionedHashes);
 
@@ -358,7 +345,7 @@ public partial class EngineModuleTests
 
     private async Task<ExecutionPayload> SendNewBlockV3(IEngineRpcModule rpc, MergeTestBlockchain chain, IList<Withdrawal>? withdrawals)
     {
-        ExecutionPayloadV3 executionPayload = (ExecutionPayloadV3)CreateBlockRequest(
+        ExecutionPayloadV3 executionPayload = CreateBlockRequest<ExecutionPayloadV3>(
             CreateParentBlockRequestOnHead(chain.BlockTree), TestItem.AddressD, withdrawals, 0, 0);
         ResultWrapper<PayloadStatusV1> executePayloadResult = await rpc.engine_newPayloadV3(executionPayload, Array.Empty<byte[]>());
 
@@ -400,11 +387,5 @@ public partial class EngineModuleTests
         string payloadId = rpcModule.engine_forkchoiceUpdatedV2(forkchoiceState, payloadAttributes).Result.Data
             .PayloadId!;
         return (rpcModule, payloadId);
-    }
-
-    protected static IEnumerable<(IReleaseSpec Spec, bool IsExcessDataGasSet)> ExcessDataGasInGetPayloadV3ForDifferentSpecTestSource()
-    {
-        yield return (Shanghai.Instance, false);
-        yield return (Cancun.Instance, true);
     }
 }

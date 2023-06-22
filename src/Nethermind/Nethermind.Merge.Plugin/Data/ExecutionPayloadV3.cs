@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 using Nethermind.Core;
+using Nethermind.Int256;
 using Newtonsoft.Json;
 
 namespace Nethermind.Merge.Plugin.Data;
@@ -16,5 +17,31 @@ public class ExecutionPayloadV3 : ExecutionPayload
 
     public ExecutionPayloadV3(Block block) : base(block)
     {
+        DataGasUsed = block.DataGasUsed;
+        ExcessDataGas = block.ExcessDataGas;
+    }
+
+    /// <summary>
+    /// Gets or sets <see cref="Block.DataGasUsed"/> as defined in
+    /// <see href="https://eips.ethereum.org/EIPS/eip-4844">EIP-4844</see>.
+    /// </summary>
+    public ulong? DataGasUsed { get; set; }
+
+    /// <summary>
+    /// Gets or sets <see cref="Block.ExcessDataGas"/> as defined in
+    /// <see href="https://eips.ethereum.org/EIPS/eip-4844">EIP-4844</see>.
+    /// </summary>
+    public ulong? ExcessDataGas { get; set; }
+
+    public override bool TryGetBlock(out Block? block, UInt256? totalDifficulty = null)
+    {
+        if (!base.TryGetBlock(out block, totalDifficulty))
+        {
+            return false;
+        }
+
+        block!.Header.DataGasUsed = DataGasUsed;
+        block.Header.ExcessDataGas = ExcessDataGas;
+        return true;
     }
 }

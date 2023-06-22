@@ -8,6 +8,7 @@ using Nethermind.Core.Specs;
 using Nethermind.JsonRpc;
 using Nethermind.Logging;
 using Nethermind.Merge.Plugin.BlockProduction;
+using Nethermind.Merge.Plugin.Data;
 
 namespace Nethermind.Merge.Plugin.Handlers;
 
@@ -40,8 +41,11 @@ public abstract class GetPayloadHandlerBase<TGetPayloadResult> : IAsyncHandler<b
             return ResultWrapper<TGetPayloadResult?>.Fail("unknown payload", MergeErrorCodes.UnknownPayload);
         }
 
-        if (!IsProperFork(blockContext, _specProvider))
+        TGetPayloadResult payload = GetPayloadResultFromBlock(blockContext);
+
+        if ((payload as ExecutionPayload ?? (payload as GetPayloadV2Result)?.ExecutionPayload)?.IsProperFork(_specProvider) != true)
         {
+            if (_logger.IsWarn) _logger.Warn($"The payload is not supported by the current fork");
             return ResultWrapper<TGetPayloadResult?>.Fail("unsupported fork", ErrorCodes.UnsupportedFork);
         }
 
@@ -49,11 +53,8 @@ public abstract class GetPayloadHandlerBase<TGetPayloadResult> : IAsyncHandler<b
 
         Metrics.GetPayloadRequests++;
         Metrics.NumberOfTransactionsInGetPayload = block.Transactions.Length;
-        return ResultWrapper<TGetPayloadResult?>.Success(GetPayloadResultFromBlock(blockContext));
+        return ResultWrapper<TGetPayloadResult?>.Success(payload);
     }
 
     protected abstract TGetPayloadResult GetPayloadResultFromBlock(IBlockProductionContext blockProductionContext);
-
-    protected virtual bool IsProperFork(IBlockProductionContext blockProductionContext, ISpecProvider specProvider)
-        => true;
 }
