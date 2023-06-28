@@ -188,9 +188,9 @@ namespace Nethermind.Blockchain.Contracts
 
                 failure = tracer.StatusCode != StatusCode.Success;
 
-                if (logger?.IsTrace ?? false)
+                if (logger?.IsInfo ?? false)
                 {
-                    logger.Trace($"[GNO] Gas spent: {tracer.GasSpent}");
+                    logger.Info($"[GNO] Gas spent: {tracer.GasSpent}");
                 }
             }
             catch (Exception e)
