@@ -45,7 +45,7 @@ public class AuraWithdrawalProcessorTests
         ulong[] values = Array.Empty<ulong>();
         Address[] addresses = Array.Empty<Address>();
         contract.ExecuteWithdrawals(
-            null!,
+            Arg.Any<ILogger>(),
             block.Header,
             4,
             Arg.Do<IList<ulong>>(a => values = a.ToArray()),
@@ -56,7 +56,7 @@ public class AuraWithdrawalProcessorTests
         contract
             .Received(1)
             .ExecuteWithdrawals(
-                null!,
+                Arg.Any<ILogger>(),
                 Arg.Is(block.Header),
                 Arg.Is<UInt256>(4),
                 Arg.Is<IList<ulong>>(a => values.SequenceEqual(new[] { 1_000_000UL, 2_000_000UL })),
