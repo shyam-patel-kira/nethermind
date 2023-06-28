@@ -10,6 +10,7 @@ using Nethermind.Evm.Tracing;
 using Nethermind.Evm.TransactionProcessing;
 using Nethermind.Specs.Forks;
 using Nethermind.State;
+using Nethermind.Logging;
 
 namespace Nethermind.Blockchain.Contracts
 {
@@ -29,7 +30,7 @@ namespace Nethermind.Blockchain.Contracts
             _transactionProcessor = transactionProcessor ?? throw new ArgumentNullException(nameof(transactionProcessor));
         }
 
-        private byte[] Call(BlockHeader header, string functionName, Transaction transaction) => CallCore(_transactionProcessor, header, functionName, transaction);
+        private byte[] Call(ILogger logger, BlockHeader header, string functionName, Transaction transaction) => CallCore(logger, _transactionProcessor, header, functionName, transaction);
 
         /// <summary>
         /// Calls the function in contract, state modification is allowed.
@@ -40,7 +41,7 @@ namespace Nethermind.Blockchain.Contracts
         /// <param name="arguments">Arguments to the function.</param>
         /// <returns>Deserialized return value of the <see cref="functionName"/> based on its definition.</returns>
         protected object[] Call(BlockHeader header, string functionName, Address sender, params object[] arguments) =>
-            Call(header, functionName, sender, DefaultContractGasLimit, arguments);
+            Call(null, header, functionName, sender, DefaultContractGasLimit, arguments);
 
         /// <summary>
         /// Calls the function in contract, state modification is allowed.
@@ -51,11 +52,11 @@ namespace Nethermind.Blockchain.Contracts
         /// <param name="gasLimit">Gas limit for generated transaction.</param>
         /// <param name="arguments">Arguments to the function.</param>
         /// <returns>Deserialized return value of the <see cref="functionName"/> based on its definition.</returns>
-        protected object[] Call(BlockHeader header, string functionName, Address sender, long gasLimit, params object[] arguments)
+        protected object[] Call(ILogger? logger, BlockHeader header, string functionName, Address sender, long gasLimit, params object[] arguments)
         {
             var function = AbiDefinition.GetFunction(functionName);
             var transaction = GenerateTransaction<SystemTransaction>(functionName, sender, gasLimit, header, arguments);
-            var result = Call(header, functionName, transaction);
+            var result = Call(logger, header, functionName, transaction);
             var objects = DecodeData(function.GetReturnInfo(), result);
             return objects;
         }

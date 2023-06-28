@@ -12,6 +12,7 @@ using Nethermind.Int256;
 using Nethermind.Evm;
 using Nethermind.Evm.Tracing;
 using Nethermind.Evm.TransactionProcessing;
+using Nethermind.Logging;
 
 namespace Nethermind.Blockchain.Contracts
 {
@@ -168,7 +169,7 @@ namespace Nethermind.Blockchain.Contracts
         /// <param name="callAndRestore">Is it restore call.</param>
         /// <returns>Bytes with result.</returns>
         /// <exception cref="AbiException">Thrown when there is an exception during execution or <see cref="CallOutputTracer.StatusCode"/> is <see cref="StatusCode.Failure"/>.</exception>
-        protected byte[] CallCore(ITransactionProcessor transactionProcessor, BlockHeader header, string functionName, Transaction transaction, bool callAndRestore = false)
+        protected byte[] CallCore(ILogger? logger, ITransactionProcessor transactionProcessor, BlockHeader header, string functionName, Transaction transaction, bool callAndRestore = false)
         {
             bool failure;
 
@@ -186,6 +187,11 @@ namespace Nethermind.Blockchain.Contracts
                 }
 
                 failure = tracer.StatusCode != StatusCode.Success;
+
+                if (logger?.IsTrace ?? false)
+                {
+                    logger.Trace($"[GNO] Gas spent: {tracer.GasSpent}");
+                }
             }
             catch (Exception e)
             {

@@ -4,10 +4,11 @@
 using System.Collections.Generic;
 using Nethermind.Core;
 using Nethermind.Int256;
+using Nethermind.Logging;
 
 namespace Nethermind.Merge.AuRa.Contracts;
 
 public interface IWithdrawalContract
 {
-    void ExecuteWithdrawals(BlockHeader blockHeader, UInt256 failedMaxCount, IList<ulong> amounts, IList<Address> addresses);
+    void ExecuteWithdrawals(ILogger logger, BlockHeader blockHeader, UInt256 failedMaxCount, IList<ulong> amounts, IList<Address> addresses);
 }
