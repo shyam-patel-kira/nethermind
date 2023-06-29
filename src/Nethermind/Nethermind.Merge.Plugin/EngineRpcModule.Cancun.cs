@@ -37,11 +37,23 @@ public partial class EngineRpcModule : IEngineRpcModule
                 .Where(t => t.BlobVersionedHashes is not null)
                 .SelectMany(t => t.BlobVersionedHashes!);
 
-        return blobVersionedHashes is null ?
-            !_specProvider.GetSpec(executionPayload.BlockNumber, executionPayload.Timestamp).IsEip4844Enabled ? await engine_newPayloadV2(executionPayload)
-            : ErrorResult("Blob versioned hashes must be set")
-            : !FlattenHashesFromTransactions(executionPayload).SequenceEqual(blobVersionedHashes, Bytes.NullableEqualityComparer) ? ErrorResult("Blob versioned hashes do not match")
-            : null;
+        if (!_specProvider.GetSpec(executionPayload!.BlockNumber, executionPayload.Timestamp).IsEip4844Enabled)
+        {
+            if (executionPayload?.DataGasUsed is not null || executionPayload?.ExcessDataGas is not null || blobVersionedHashes is not null)
+            {
+                ResultWrapper<PayloadStatusV1>.Fail("Cancun params are not empty", ErrorCodes.InvalidParams);
+            }
+
+            return await engine_newPayloadV2(executionPayload!);
+        }
+        else
+        {
+            return blobVersionedHashes is null || executionPayload?.DataGasUsed is null || executionPayload?.ExcessDataGas is null
+                ? ResultWrapper<PayloadStatusV1>.Fail("Invalid Cancun params", ErrorCodes.InvalidParams)
+                : !FlattenHashesFromTransactions(executionPayload).SequenceEqual(blobVersionedHashes, Bytes.NullableEqualityComparer) ? ErrorResult("Blob versioned hashes do not match")
+                : null;
+        }
+
     }
 
     public async Task<ResultWrapper<GetPayloadV3Result?>> engine_getPayloadV3(byte[] payloadId) =>

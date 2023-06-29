@@ -187,7 +187,8 @@ public class ExecutionPayload
 public static class ExecutionPayloadExtensions
 {
     public static int GetVersion(this ExecutionPayload executionPayload) =>
-        executionPayload.Withdrawals is null ? 1 : 2;
+        executionPayload.Withdrawals is null ? 1 :
+        executionPayload.DataGasUsed is null && executionPayload.ExcessDataGas is null ? 2 : 3;
 
     public static bool Validate(
         this ExecutionPayload executionPayload,
@@ -200,7 +201,8 @@ public static class ExecutionPayloadExtensions
         error = actualVersion switch
         {
             1 when spec.WithdrawalsEnabled => "ExecutionPayloadV2 expected",
-            > 1 when !spec.WithdrawalsEnabled => "ExecutionPayloadV1 expected",
+            2 when spec.IsEip4844Enabled || !spec.WithdrawalsEnabled => "ExecutionPayloadV3 expected",
+            3 when !spec.IsEip4844Enabled => "ExecutionPayloadV2 or older expected",
             _ => actualVersion > version ? $"ExecutionPayloadV{version} expected" : null
         };
 
