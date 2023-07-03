@@ -65,10 +65,10 @@ jobs:
           #unzip pkg2.zip -d pkg2
           #dyld_info -dependents pkg2/runtimes/osx-x64/native/librocksdb.dylib
           #echo "--------------------------------"
-          find /usr/lib/ -name 'libbz2.1.0.dylib'
+          find /usr/lib/ -type f -iname 'libbz2.1.0.dylib' -ls
           #sudo ln -s /usr/lib/libbz2.1.0.dylib /usr/local/lib/libbz.dylib
-          #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          #dotnet run -c debug
+          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
+          dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
