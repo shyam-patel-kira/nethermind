@@ -67,14 +67,14 @@ jobs:
           #echo "--------------------------------"
           #find /opt -name 'libbz*'
           sudo ln -s /usr/lib/libbz2.1.0.dylib /usr/local/lib/libbz.dylib
-          #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          #dotnet run -c debug
+          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
+          dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
-          curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
-          mkdir pkg
-          unzip pkg.zip -d pkg
-          cd pkg
-          ./Nethermind.Runner
+          #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
+          #mkdir pkg
+          #unzip pkg.zip -d pkg
+          #cd pkg
+          #./Nethermind.Runner
         shell: bash
 
       #- name: Run Sedge
