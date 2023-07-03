@@ -60,10 +60,10 @@ jobs:
           dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
           sudo find /usr/local/Cellar/bzip2 -name '*.dylib'
           echo "--------------------------------"
-          curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.3.2.39678.nupkg -o pkg.zip
-          mkdir pkg
-          unzip pkg.zip -d pkg
-          dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
+          curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.3.2.39678.nupkg -o pkg2.zip
+          mkdir pkg2
+          unzip pkg2.zip -d pkg2
+          dyld_info -dependents pkg2/runtimes/osx-x64/native/librocksdb.dylib
           echo "--------------------------------"
           #find /opt -name 'libbz*'
           #sudo ln -s /usr/lib/libbz2.dylib /usr/local/lib/libbz.dylib
