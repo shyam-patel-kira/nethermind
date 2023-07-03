@@ -54,11 +54,17 @@ jobs:
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
-          #curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.0.0.37452.nupkg -o pkg.zip
-          #mkdir pkg
-          #unzip pkg.zip -d pkg
-          #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
-          #sudo find /usr/local/Cellar/bzip2 -name '*.dylib'
+          curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.0.0.37452.nupkg -o pkg.zip
+          mkdir pkg
+          unzip pkg.zip -d pkg
+          dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
+          sudo find /usr/local/Cellar/bzip2 -name '*.dylib'
+          echo "--------------------------------"
+          curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.3.2.39678.nupkg -o pkg.zip
+          mkdir pkg
+          unzip pkg.zip -d pkg
+          dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
+          echo "--------------------------------"
           #find /opt -name 'libbz*'
           #sudo ln -s /usr/lib/libbz2.dylib /usr/local/lib/libbz.dylib
           cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
