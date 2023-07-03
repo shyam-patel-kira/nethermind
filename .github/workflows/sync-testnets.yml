@@ -65,7 +65,7 @@ jobs:
           #unzip pkg2.zip -d pkg2
           #dyld_info -dependents pkg2/runtimes/osx-x64/native/librocksdb.dylib
           #echo "--------------------------------"
-          find /usr/lib/ -type f -iname 'libbz2.1.0.dylib' -ls
+          #find /usr/lib/ -type f -iname 'libbz2.1.0.dylib' -ls
           #sudo ln -s /usr/lib/libbz2.1.0.dylib /usr/local/lib/libbz.dylib
           cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
           dotnet run -c debug
