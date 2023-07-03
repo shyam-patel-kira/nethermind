@@ -54,21 +54,21 @@ jobs:
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
-          #curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.0.0.37452.nupkg -o pkg.zip
-          #mkdir pkg
-          #unzip pkg.zip -d pkg
-          #dyld_info -dependents pkg/runtimes/osx-x64/native/librocksdb.dylib
+          curl -sL https://repo1.maven.org/maven2/org/rocksdb/rocksdbjni/8.3.2/rocksdbjni-8.3.2-osx.jar -o pkg.zip
+          mkdir pkg
+          unzip pkg.zip -d pkg
+          dyld_info -dependents pkg/librocksdbjni-osx-x86_64.jnilib
           #sudo find /usr/local/Cellar/bzip2 -name '*.dylib'
           #echo "--------------------------------"
           #curl -sL https://globalcdn.nuget.org/packages/rocksdb.8.3.2.39678.nupkg -o pkg2.zip
           #mkdir pkg2
           #unzip pkg2.zip -d pkg2
           #dyld_info -dependents pkg2/runtimes/osx-x64/native/librocksdb.dylib
-          #echo "--------------------------------"
-          find /usr/lib/ -type f -iname 'libbz2.1.0.dylib' -ls
-          sudo ln -s /usr/lib/libbz2.1.0.dylib /usr/local/lib/libbz.dylib
-          cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
-          dotnet run -c debug
+          ##echo "--------------------------------"
+          #find /usr/lib/ -type f -iname 'libbz2.1.0.dylib' -ls
+          #sudo ln -s /usr/lib/libbz2.1.0.dylib /usr/local/lib/libbz.dylib
+          #cd $GITHUB_WORKSPACE/src/Nethermind/Nethermind.Runner
+          #dotnet run -c debug
           #cd $GITHUB_WORKSPACE/neth
           #curl -sL https://github.com/NethermindEth/nethermind/releases/download/1.19.2/nethermind-1.19.2-42ba08b7-macos-x64.zip -o pkg.zip
           #mkdir pkg
