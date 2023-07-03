@@ -50,7 +50,7 @@ jobs:
           #brew install rocksdb
           #echo $(brew --prefix)
           #export DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib
-          brew install lz4 snappy zstd zlib bzip2
+          brew install lz4 snappy zstd zlib 
           #brew tap nethermindeth/nethermind
           #brew install nethermind
           #nethermind
