@@ -46,7 +46,7 @@ jobs:
       
       - name: Install with brew and start
         run: |
-          brew update
+          #brew update
           #brew install rocksdb
           #echo $(brew --prefix)
           #export DYLD_FALLBACK_LIBRARY_PATH=$(brew --prefix)/lib
