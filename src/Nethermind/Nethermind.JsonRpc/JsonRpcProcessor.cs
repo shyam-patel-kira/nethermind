@@ -286,7 +286,7 @@ namespace Nethermind.JsonRpc
 
         private void TraceResult(JsonRpcResult.Entry response)
         {
-            if (_logger.IsDebug)
+            if (_logger.IsTrace)
             {
                 StringBuilder builder = new();
                 using StringWriter stringWriter = new(builder);
