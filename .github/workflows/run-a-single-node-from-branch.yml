@@ -64,6 +64,69 @@ on:
         description: "SSH Keys to be installed in the smoke test nodes (separated by commas without space in-between commas) for example: key1,key2,key3"
         default: ""
         required: false
+  workflow_call:
+    inputs:
+      network:
+        description: "Select a network on which You want to run a node"
+        default: "mainnet"
+        required: true
+        type: choice
+        options:
+          - mainnet
+          - gnosis
+          - sepolia
+          - goerli
+          - chiado
+      cl_client:
+        description: "Select Consensus Layer Client to run node against"
+        default: ""
+        required: true
+        type: choice
+        options:
+          - lighthouse
+          - lodestar
+          #- nimbus
+          - prysm
+          - teku
+      cl_custom_image:
+        description: "In case of need to run non-default cl image (different than actually supported by Sedge) put it in there"
+        default: ""
+        required: false        
+      config:
+        description: "Select a config file which will be selected for tests."
+        default: "default.json"
+        required: true        
+        type: choice
+        options:
+          - default.json
+          - archiveSync.json
+          - fastSync.json
+          - fullSync.json
+          - fuzzer.json
+      non_validator_mode:
+        description: "If checked, node will be started in NonValidator mode (OldBodies and oldReceipts will not be synced)"
+        default: true
+        type: boolean
+      timeout:
+        description: "Timeout in hours before triggering the deletion of smoke test instances. Maximum time of node lifetime can be 72 hours."
+        default: "24"
+        required: true
+      volume:
+        description: "In case custom volume size needs to be applied, put value in GB here)"
+        required: false
+        default: ""
+      additional_nethermind_flags:
+        description: "Provide any additional flags to the Nethermind in space-separated format. Example: \"JsonRpc.Enabled=false Sync.SnapSync=false\"."
+        default: ""
+        required: false
+      additional_cl_flags:
+        description: "Provide any additional flags to the CL client in space-separated format. Example: \"clflag1=1 clflag2=2\"."
+        default: ""
+        required: false
+      ssh_keys:
+        description: "SSH Keys to be installed in the smoke test nodes (separated by commas without space in-between commas) for example: key1,key2,key3"
+        default: ""
+        required: false
       
 jobs:
   create_docker_image:
