@@ -69,12 +69,12 @@ on:
       network:
         description: "Select a network on which You want to run a node"
         default: "mainnet"
-        required: true
+        required: false
         type: string
       cl_client:
         description: "Select Consensus Layer Client to run node against"
         default: ""
-        required: true
+        required: false
         type: string
       cl_custom_image:
         description: "In case of need to run non-default cl image (different than actually supported by Sedge) put it in there"
@@ -84,7 +84,7 @@ on:
       config:
         description: "Select a config file which will be selected for tests."
         default: "default.json"
-        required: true        
+        required: false
         type: string
       non_validator_mode:
         description: "If checked, node will be started in NonValidator mode (OldBodies and oldReceipts will not be synced)"
@@ -93,7 +93,7 @@ on:
       timeout:
         description: "Timeout in hours before triggering the deletion of smoke test instances. Maximum time of node lifetime can be 72 hours."
         default: "24"
-        required: true
+        required: false
         type: string
       volume:
         description: "In case custom volume size needs to be applied, put value in GB here)"
