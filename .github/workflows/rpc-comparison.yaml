@@ -16,12 +16,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: create_node
     outputs:
-      rpc_url: ${{steps.extract_rpc_url.rpc_url}}
+      rpc_url: ${{ env.rpc_url }}
     steps:
+
+      - name: Set BASE_TAG
+        id: set-base-tag
+        env:
+          GITHUB_USERNAME: ${{ github.actor }}
+        run: |
+          BASE_TAG="${GITHUB_USERNAME:0:1}$(shuf -i 1000-9999 -n 1)"
+          echo "BASE_TAG=$BASE_TAG" >> $GITHUB_ENV
+          echo "::set-output name=base_tag::$BASE_TAG"
+    
       - name: Download a single artifact
         uses: actions/download-artifact@v3
         with:
-          name: "${{ inputs.github_username }}-${{ env.BASE_TAG }}-smoketests"
+          name: "${{ github.actor }}-${{ env.BASE_TAG }}-smoketests"
 
       - name: Get RPC url to the newly created node
         id: extract_rpc_url
@@ -36,10 +46,8 @@ jobs:
         rpc_to_compare: [INFURA_ENDPOINT, NETHERMIND_ARCHIVE_ENDPOINT]
     steps:
     - name: Install flood
-      if: matrix.os == 'ubuntu-latest'
       run: pip install git+https://github.com/piwonskp/flood.git
   
     - name: Test equality of responses
-      if: matrix.os == 'ubuntu-latest'
-      run: flood all nethermind_current=${{needs.extract_rpc_url.outputs.rpc_url}} ${{ matrix.rpc_to_compare }}=${{ secrets[matrix.rpc_to_compare] }} --equality
+      run: flood all nethermind_current=${{ needs.extract_rpc_url.outputs.rpc_url }} ${{ matrix.rpc_to_compare }}=${{ secrets[matrix.rpc_to_compare] }} --equality
     
