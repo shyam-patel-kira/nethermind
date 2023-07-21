@@ -73,7 +73,7 @@ on:
         type: string
       cl_client:
         description: "Select Consensus Layer Client to run node against"
-        default: ""
+        default: "lighthouse"
         required: false
         type: string
       cl_custom_image:
