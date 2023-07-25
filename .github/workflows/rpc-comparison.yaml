@@ -18,21 +18,13 @@ jobs:
     needs: create_node
     outputs:
       rpc_url: ${{ env.rpc_url }}
-    steps:
-
-      - name: Set BASE_TAG
-        id: set-base-tag
-        env:
-          GITHUB_USERNAME: ${{ github.actor }}
-        run: |
-          BASE_TAG="${GITHUB_USERNAME:0:1}$(shuf -i 1000-9999 -n 1)"
-          echo "BASE_TAG=$BASE_TAG" >> $GITHUB_ENV
-          echo "::set-output name=base_tag::$BASE_TAG"
-    
+    steps:    
       - name: Download a single artifact
         uses: actions/download-artifact@v3
         with:
-          name: "${{ github.actor }}-${{ env.BASE_TAG }}-smoketests"
+          name: "${{ github.actor }}-${{ needs.create_node.outputs.base_tag }}-smoketests"
+
+      - run: echo "${{ github.actor }}-${{ needs.create_node.outputs.base_tag }}-smoketests"
 
       - name: Get RPC url to the newly created node
         id: extract_rpc_url

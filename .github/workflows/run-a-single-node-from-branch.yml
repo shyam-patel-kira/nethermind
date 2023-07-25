@@ -115,6 +115,11 @@ on:
         description: "SSH Keys to be installed in the smoke test nodes (separated by commas without space in-between commas) for example: key1,key2,key3"
         default: ""
         required: false
+    outputs:
+      base_tag:
+        description: ""
+        value: ${{ jobs.create_docker_image.outputs.base_tag }}
+
       
 jobs:
   create_docker_image:
