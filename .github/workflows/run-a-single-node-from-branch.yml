@@ -119,9 +119,9 @@ on:
       base_tag:
         description: ""
         value: ${{ jobs.create_docker_image.outputs.base_tag }}
-      workflow_id:
+      run_id:
         description: ""
-        value: ${{ jobs.trigger_node_and_vm_creation.outputs.workflow_id }}
+        value: ${{ jobs.trigger_node_and_vm_creation.outputs.run_id }}
 
 
 jobs:
@@ -195,7 +195,7 @@ jobs:
     needs: create_docker_image
     runs-on: ubuntu-latest
     outputs:
-      workflow_id: ${{ steps.create_node.outputs.workflowId }}
+      run_id: ${{ steps.wait-for-node-creation.outputs.run_id }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -242,6 +242,7 @@ jobs:
           }
 
     - name: Wait for creation of node
+      id: wait-for-node-creation
       env:
         GITHUB_TOKEN: ${{ secrets.REPOSITORY_DISPATCH_TOKEN }}
         WORKFLOW_ID: 'run-single-node.yml'
