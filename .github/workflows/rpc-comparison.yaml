@@ -18,11 +18,7 @@ jobs:
     needs: create_node
     outputs:
       rpc_url: ${{ env.rpc_url }}
-    steps:    
-      - name: Download a single artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: "${{ github.actor }}-${{ needs.create_node.outputs.base_tag }}-smoketests"
+    steps:
       - name: Download artifact
         id: download-artifact
         uses: dawidd6/action-download-artifact@v2
