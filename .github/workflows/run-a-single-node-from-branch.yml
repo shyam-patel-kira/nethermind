@@ -119,6 +119,9 @@ on:
       base_tag:
         description: ""
         value: ${{ jobs.create_docker_image.outputs.base_tag }}
+      workflow_id:
+        description: ""
+        value: ${{ jobs.trigger_node_and_vm_creation.outputs.workflow_id }}
 
       
 jobs:
@@ -187,6 +190,8 @@ jobs:
   trigger_node_and_vm_creation:
     needs: create_docker_image
     runs-on: ubuntu-latest
+    outputs:
+      workflow_id: ${{ steps.create_node.outputs.workflowId }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -205,6 +210,7 @@ jobs:
 
     - name: Trigger Node creation Repo Action
       uses: benc-uk/workflow-dispatch@v1
+      id: create_node
       with:
           workflow: run-single-node.yml
           repo: NethermindEth/post-merge-smoke-tests
