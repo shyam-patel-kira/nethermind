@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: create_node
     outputs:
-      rpc_url: ${{ env.rpc_url }}
+      rpc_url: ${{ steps.extract_rpc_url.outputs.rpc_url }}
     steps:
       - name: Download artifact
         id: download-artifact
