@@ -117,7 +117,7 @@ on:
         required: false
       allowed_ips:
         type: string
-        description: "A list of ips allowed to connect to the node"
+        description: "A comma-separated list of ips allowed to connect to the node"
         default: ""
         required: false
     outputs:
