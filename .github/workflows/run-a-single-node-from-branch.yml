@@ -64,6 +64,11 @@ on:
         description: "SSH Keys to be installed in the smoke test nodes (separated by commas without space in-between commas) for example: key1,key2,key3"
         default: ""
         required: false
+      allowed_ips:
+        type: string
+        description: "A list of ips allowed to connect to the node"
+        default: ""
+        required: false
   workflow_call:
     inputs:
       network:
@@ -113,6 +118,11 @@ on:
       ssh_keys:
         type: string
         description: "SSH Keys to be installed in the smoke test nodes (separated by commas without space in-between commas) for example: key1,key2,key3"
+        default: ""
+        required: false
+      allowed_ips:
+        type: string
+        description: "A list of ips allowed to connect to the node"
         default: ""
         required: false
     outputs:
@@ -237,7 +247,8 @@ jobs:
                 \"volume\":\"${{ inputs.volume }}\",
                 \"additional_nethermind_flags\":\"${{ inputs.additional_nethermind_flags }}\",
                 \"additional_cl_flags\":\"${{ inputs.additional_cl_flags }}\",
-                \"ssh_keys\":\"${{ inputs.ssh_keys }}\"
+                \"ssh_keys\":\"${{ inputs.ssh_keys }}\",
+                \"allowed_ips\":\"${{ inputs.allowed_ips }}\"
               }"
           }
 
