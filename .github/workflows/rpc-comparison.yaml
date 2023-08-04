@@ -52,6 +52,7 @@ jobs:
       matrix:
         rpc_to_compare: [INFURA_ENDPOINT, NETHERMIND_ARCHIVE_ENDPOINT]
     steps:
+    - uses: actions/checkout@v3
     - name: Install WireGuard
       run: |
         sudo apt update
