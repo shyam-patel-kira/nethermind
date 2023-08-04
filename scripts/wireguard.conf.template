@@ -1,0 +1,14 @@
+[Interface]
+PrivateKey = ${WG_PRIVATE}
+Address = ${WG_IPS}
+DNS = 172.22.159.176
+PostUp = ip rule add table 200 from ${WG_ENDPOINT}
+PostUp = ip route add table 200 default via ${WG_ENDPOINT}
+PreDown = ip rule delete table 200 from ${WG_ENDPOINT}
+PreDown = ip route delete table 200 default via ${WG_ENDPOINT}
+
+[Peer]
+PublicKey = ${WG_ENDPOINT_PUBLIC}
+PresharedKey = ${WG_PRESHARED}
+AllowedIPs = ${WG_ALLOWED_IPS}
+Endpoint = ${WG_ENDPOINT}:${WG_ENDPOINT_PORT}

@@ -57,7 +57,7 @@ jobs:
         sudo apt update
         sudo apt install -y wireguard resolvconf
         sudo mkdir -p /etc/wireguard
-        envsubst < utils/wg0.conf > wg0.conf
+        envsubst < utils/wireguard.conf.template > wg0.conf
         sudo wg-quick up ./wg0.conf
       env:
         WG_ENDPOINT: '${{ secrets.WG_ENDPOINT }}'
