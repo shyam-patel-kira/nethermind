@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Get runner ip addresses
         id: ip
-        uses: haythem/public-ip@v1.2
+        uses: haythem/public-ip@v1.3
       - run: echo "${{ steps.ip.outputs.ipv4 }}"
 
   create_node: 
