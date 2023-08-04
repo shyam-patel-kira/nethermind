@@ -62,6 +62,11 @@ jobs:
       matrix:
         rpc_to_compare: [INFURA_ENDPOINT, NETHERMIND_ARCHIVE_ENDPOINT]
     steps:
+    - name: Get runner ip addresses
+      id: ip
+      uses: haythem/public-ip@v1.3
+    - run: echo "${{ steps.ip.outputs.ipv4 }}"
+
     - name: Install flood
       run: pip install git+https://github.com/piwonskp/flood.git
   
