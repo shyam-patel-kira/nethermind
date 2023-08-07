@@ -61,13 +61,14 @@ jobs:
         envsubst < scripts/wireguard.conf.template > wg0.conf
         sudo wg-quick up ./wg0.conf
       env:
-        WG_ENDPOINT: '${{ secrets.WG_ENDPOINT }}'
-        WG_ENDPOINT_PUBLIC: '${{ secrets.WG_ENDPOINT_PUBLIC }}'
-        WG_IPS: '${{ secrets.WG_IPS }}'
-        WG_ALLOWED_IPS: '${{ secrets.WG_ALLOWED_IPS }}'
-        WG_PRIVATE: '${{ secrets.WG_PRIVATE }}'
-        WG_PRESHARED: '${{ secrets.WG_PRESHARED }}'
-        WG_ENDPOINT_PORT: '${{ secrets.WG_ENDPOINT_PORT }}'
+        WIREGUARD_PRIVKEY: '${{ secrets.WIREGUARD_PRIVKEY }}'
+        WIREGUARD_ADDRESS: '${{ secrets.WIREGUARD_ADDRESS }}'
+        WIREGUARD_DNS: '${{ secrets.WIREGUARD_DNS }}'
+        WIREGUARD_PUBKEY: '${{ secrets.WIREGUARD_PUBKEY }}'
+        WIREGUARD_PRESHAREDKEY: '${{ secrets.WIREGUARD_PRESHAREDKEY }}'
+        WIREGUARD_ALLOWED_IPS: '${{ secrets.WIREGUARD_ALLOWED_IPS }}'
+        WIREGUARD_SERVER_IP: '${{ secrets.WIREGUARD_SERVER_IP }}'
+        WIREGUARD_SERVER_PORT: '${{ secrets.WIREGUARD_SERVER_PORT }}'
 
     - name: Install flood
       run: pip install git+https://github.com/piwonskp/flood.git
