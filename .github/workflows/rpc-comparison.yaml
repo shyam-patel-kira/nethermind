@@ -53,6 +53,9 @@ jobs:
         rpc_to_compare: [INFURA_ENDPOINT, NETHERMIND_ARCHIVE_ENDPOINT]
     steps:
     - uses: actions/checkout@v3
+    - name: Install flood
+      run: pip install git+https://github.com/piwonskp/flood.git
+
     - name: Install WireGuard
       run: |
         sudo apt update
@@ -69,9 +72,6 @@ jobs:
         WIREGUARD_ALLOWED_IPS: '${{ secrets.WIREGUARD_ALLOWED_IPS }}'
         WIREGUARD_SERVER_IP: '${{ secrets.WIREGUARD_SERVER_IP }}'
         WIREGUARD_SERVER_PORT: '${{ secrets.WIREGUARD_SERVER_PORT }}'
-
-    - name: Install flood
-      run: pip install git+https://github.com/piwonskp/flood.git
   
     - name: Test equality of responses
       run: flood all nethermind_current=${{ needs.extract_rpc_url.outputs.rpc_url }} ${{ matrix.rpc_to_compare }}=${{ secrets[matrix.rpc_to_compare] }} --equality
