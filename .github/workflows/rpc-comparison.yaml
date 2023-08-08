@@ -50,7 +50,11 @@ jobs:
     needs: extract_rpc_url
     strategy:
       matrix:
-        rpc_to_compare: [INFURA_ENDPOINT, NETHERMIND_ARCHIVE_ENDPOINT]
+        include:
+          - name: INFURA_ENDPOINT
+            address: ${{ secrets.INFURA_ENDPOINT }}
+          - name: NETHERMIND_ARCHIVE_ENDPOINT
+            address: ${{ secrets.NETHERMIND_ARCHIVE_ENDPOINT }}
     steps:
     - uses: actions/checkout@v3
     - name: Install flood
@@ -74,5 +78,5 @@ jobs:
         WIREGUARD_SERVER_PORT: '${{ secrets.WIREGUARD_SERVER_PORT }}'
   
     - name: Test equality of responses
-      run: flood all nethermind_current=${{ needs.extract_rpc_url.outputs.rpc_url }} ${{ matrix.rpc_to_compare }}=${{ secrets[matrix.rpc_to_compare] }} --equality
+      run: flood all nethermind_current=${{ needs.extract_rpc_url.outputs.rpc_url }} ${{ matrix.name }}=${{ matrix.address }} --equality
     
